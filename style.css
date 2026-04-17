@@ -599,15 +599,50 @@ input, select { outline: none; }
   display: flex;
   gap: .55rem;
   align-items: flex-start;
+  flex-wrap: wrap;
 }
 .interp-label {
   font-size: .72rem;
   font-weight: 700;
   color: var(--text3);
-  white-space: nowrap;
-  min-width: 70px;
+  word-break: keep-all;
+  min-width: 60px;
+  max-width: 90px;
   padding-top: .1rem;
+  flex-shrink: 0;
 }
+.interp-row > span:last-child { flex: 1; min-width: 0; word-break: keep-all; }
+
+/* 블록형 (라벨이 길 때 세로 배치) */
+.interp-block {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: .6rem .75rem;
+  background: var(--bg2);
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+.interp-block-label {
+  font-size: .78rem;
+  font-weight: 700;
+  word-break: keep-all;
+}
+.interp-block p { font-size: .79rem; color: var(--text2); line-height: 1.7; word-break: keep-all; }
+
+/* 쉽게 말하면 박스 */
+.easy-box {
+  background: #fff8e1;
+  border: 1px solid #ffe082;
+  border-radius: 6px;
+  padding: .45rem .7rem;
+  font-size: .78rem;
+  color: #5d4037;
+  line-height: 1.65;
+  word-break: keep-all;
+}
+.easy-box b { color: #e65100; }
+
 .interp-example {
   background: #f8f8f8;
   border-radius: 6px;
@@ -616,6 +651,7 @@ input, select { outline: none; }
   color: var(--text2);
   font-style: italic;
   border-left: 2px solid var(--border2);
+  word-break: keep-all;
 }
 .interp-ok {
   color: var(--wood);
