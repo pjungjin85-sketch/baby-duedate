@@ -504,12 +504,174 @@ input, select { outline: none; }
 .hour-detail-panel.open { display: block; }
 
 /* ── 17. 반응형 ──────────────────────────────────── */
+
+/* 태블릿 (768px) */
+@media (max-width: 768px) {
+  #app { padding: 0 .85rem 3rem; }
+  .top-list { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); }
+}
+
+/* 모바일 (640px) */
 @media (max-width: 640px) {
-  .form-grid { grid-template-columns: 1fr; }
+  /* 헤더 */
+  .app-header { padding: 1.4rem 0 1.1rem; }
+  .yin-yang-icon { font-size: 2.2rem; }
+  .subtitle { font-size: .84rem; }
+
+  /* 폼 */
+  .form-grid { grid-template-columns: 1fr; gap: .7rem; }
   .due-card { grid-column: 1; }
-  .score-breakdown { grid-template-columns: 1fr; }
-  .top-list { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-  .day-row-header { grid-template-columns: 1.8rem 1fr auto; }
+  .form-card { padding: 1.1rem 1.1rem; }
+
+  /* 결과 헤더 */
+  .result-header { padding: .9rem 0 .7rem; gap: .5rem; }
+  .result-header h2 { font-size: 1.15rem; flex: 1 1 100%; }
+  .analysis-range { font-size: .76rem; }
+
+  /* TOP 5 - 가로 스크롤 카드 */
+  .top-list {
+    display: flex;
+    overflow-x: auto;
+    gap: .65rem;
+    padding-bottom: .6rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    /* 스크롤바 숨김 */
+    scrollbar-width: none;
+  }
+  .top-list::-webkit-scrollbar { display: none; }
+  .top-card {
+    flex: 0 0 140px;
+    scroll-snap-align: start;
+  }
+  .top-card-score { font-size: 1.35rem; }
+
+  /* 정렬 바 */
+  .sort-bar { gap: .3rem; margin-top: 1rem; }
+  .sort-btn { font-size: .74rem; padding: .26rem .55rem; }
+  .sort-label { font-size: .76rem; }
+
+  /* 섹션 타이틀 */
+  .section-title { font-size: .86rem; margin: 1rem 0 .65rem; }
+
+  /* 날짜 목록 행 */
+  .day-row-header {
+    grid-template-columns: 1.6rem 1fr auto;
+    gap: .5rem;
+    padding: .7rem .75rem;
+    min-height: 52px;
+  }
+  .day-date-line { font-size: .86rem; gap: .35rem; }
+  .day-weekday { font-size: .73rem; }
+  .day-best-time { font-size: .72rem; }
+  .day-saju-text { font-size: .68rem; letter-spacing: .03em; }
+  .day-score-col { min-width: 60px; gap: .12rem; }
+  .score-total { font-size: 1.05rem; }
+  .score-mini-bars { display: none; } /* 모바일에서 미니 바 숨김 */
+  .day-expand-btn { padding: .05rem .75rem .45rem; font-size: .72rem; }
+  .day-detail-panel { padding: 0 .75rem .75rem; }
+
+  /* 점수 브레이크다운 */
+  .score-breakdown { grid-template-columns: 1fr; gap: .3rem; }
+  .score-section-title { font-size: .69rem; }
+  .score-row-label { min-width: 62px; font-size: .71rem; }
+  .score-row-val { font-size: .71rem; min-width: 28px; }
+
+  /* 사주 4주 테이블 */
+  .pillar-table { gap: .28rem; margin-bottom: .65rem; }
+  .pillar-cell { padding: .38rem .18rem; border-radius: 6px; }
+  .pillar-label { font-size: .58rem; margin-bottom: .18rem; }
+  .pillar-hanja { font-size: .92rem; }
+  .pillar-kr { font-size: .6rem; }
+  .pillar-element { font-size: .56rem; }
+
+  /* 오행 분포 바 */
+  .wuxing-bar { gap: .28rem; margin-bottom: .6rem; }
+  .wuxing-item { font-size: .68rem; gap: .16rem; }
+  .wuxing-dot { width: 8px; height: 8px; }
+
+  /* 귀인 뱃지 */
+  .guiren-badges { gap: .2rem; margin-bottom: .5rem; }
+  .badge { font-size: .63rem; padding: .14rem .4rem; }
+
+  /* 시간대 행 */
+  .hour-row-header {
+    grid-template-columns: 4rem 1fr auto;
+    gap: .45rem;
+    padding: .62rem .75rem;
+    min-height: 50px;
+  }
+  .hour-name { font-size: .82rem; }
+  .hour-time { font-size: .66rem; }
+  .hour-score-num { font-size: .88rem; min-width: 30px; }
+  .hour-expand-btn { padding: 0 .75rem .5rem; font-size: .69rem; }
+  .hour-detail-panel { padding: 0 .75rem .7rem; }
+
+  /* 상세 페이지 헤더 */
+  .detail-header { padding: .9rem 0 .7rem; gap: .5rem; }
+  .detail-header h2 { font-size: 1.05rem; }
+  .detail-saju-summary { padding: .9rem .85rem; border-radius: 10px; }
+
+  /* 버튼 */
+  .btn-back { font-size: .76rem; padding: .32rem .6rem; }
+  .interp-toggle-btn { font-size: .76rem; padding: .48rem; margin-top: .75rem; }
+  .btn-analyze { font-size: .96rem; padding: .88rem; }
+
+  /* 풀이 섹션 */
+  .interp-wrap { gap: .5rem; }
+  .interp-head { padding: .55rem .75rem; gap: .5rem; }
+  .interp-icon { font-size: .95rem; }
+  .interp-title { font-size: .76rem; }
+  .interp-body { padding: .65rem .75rem; font-size: .77rem; gap: .45rem; }
+  .interp-core { font-size: .78rem; padding: .4rem .6rem; }
+  .easy-box { font-size: .75rem; padding: .4rem .6rem; }
+  .interp-block { padding: .48rem .6rem; gap: .28rem; }
+  .interp-block-label { font-size: .73rem; }
+  .interp-block p { font-size: .74rem; }
+  .interp-row { gap: .45rem; }
+  .interp-label { font-size: .7rem; min-width: 58px; max-width: 80px; }
+  .interp-example { font-size: .75rem; padding: .4rem .6rem; }
+  .interp-guiren { padding: .48rem .6rem; }
+  .interp-guiren-title { font-size: .76rem; }
+  .interp-ok { font-size: .77rem; }
+
+  /* 퍼센트 뱃지 */
+  .pct-badge { font-size: .63rem; padding: .14rem .42rem; }
+}
+
+/* 초소형 화면 (380px 이하) */
+@media (max-width: 380px) {
+  #app { padding: 0 .55rem 2.5rem; }
+
+  .app-header { padding: 1.1rem 0 .9rem; }
+  .app-header h1 { font-size: 1.2rem; }
+  .subtitle { font-size: .8rem; }
+
+  .form-card { padding: .95rem .9rem; }
+  .btn-analyze { font-size: .88rem; padding: .82rem; }
+
+  .top-card { flex: 0 0 128px; }
+  .top-card-date { font-size: .8rem; }
+  .top-card-time { font-size: .7rem; }
+  .top-card-score { font-size: 1.25rem; }
+
+  .day-row-header { padding: .62rem .6rem; gap: .4rem; }
+  .day-date-line { font-size: .82rem; }
+  .score-total { font-size: .98rem; }
+
+  .pillar-cell { padding: .3rem .12rem; }
+  .pillar-hanja { font-size: .84rem; }
+  .pillar-kr { font-size: .56rem; }
+
+  .hour-row-header {
+    grid-template-columns: 3.6rem 1fr auto;
+    padding: .58rem .6rem;
+  }
+  .hour-name { font-size: .78rem; }
+
+  .result-header h2 { font-size: 1.05rem; }
+  .detail-header h2 { font-size: .95rem; }
+  .section-title { font-size: .82rem; }
 }
 
 /* ── 18. 점수 등급 색상 ──────────────────────────── */
