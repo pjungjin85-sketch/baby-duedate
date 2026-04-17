@@ -1,0 +1,879 @@
+'use strict';
+
+// ════════════════════════════════════════════════
+// 1. 기본 상수
+// ════════════════════════════════════════════════
+
+const TG = ['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+const TG_KR = ['갑','을','병','정','무','기','경','신','임','계'];
+const TG_WX = [0,0,1,1,2,2,3,3,4,4];
+
+const DZ = ['子','丑','寅','卯','辰','巳','午','未','申','酉','戌','亥'];
+const DZ_KR = ['자','축','인','묘','진','사','오','미','신','유','술','해'];
+const DZ_WX = [4,2,0,0,2,1,1,2,3,3,2,4];
+
+const WX = ['목','화','토','금','수'];
+const WX_HANJA = ['木','火','土','金','水'];
+const WX_CLS = ['wx-wood','wx-fire','wx-earth','wx-metal','wx-water'];
+const WX_COLOR = ['var(--wood)','var(--fire)','var(--earth)','var(--metal)','var(--water)'];
+
+const HOURS = [
+  {name:'자시',time:'23:00~01:00'},{name:'축시',time:'01:00~03:00'},
+  {name:'인시',time:'03:00~05:00'},{name:'묘시',time:'05:00~07:00'},
+  {name:'진시',time:'07:00~09:00'},{name:'사시',time:'09:00~11:00'},
+  {name:'오시',time:'11:00~13:00'},{name:'미시',time:'13:00~15:00'},
+  {name:'신시',time:'15:00~17:00'},{name:'유시',time:'17:00~19:00'},
+  {name:'술시',time:'19:00~21:00'},{name:'해시',time:'21:00~23:00'},
+];
+
+const IPCHUN = {2023:[2,4],2024:[2,4],2025:[2,3],2026:[2,4],2027:[2,4],2028:[2,4]};
+
+const SOLAR_TERMS = {
+  2024:[[1,6,1],[2,4,2],[3,5,3],[4,4,4],[5,5,5],[6,5,6],[7,6,7],[8,7,8],[9,7,9],[10,8,10],[11,7,11],[12,7,0]],
+  2025:[[1,5,1],[2,3,2],[3,5,3],[4,4,4],[5,5,5],[6,5,6],[7,7,7],[8,7,8],[9,7,9],[10,8,10],[11,7,11],[12,7,0]],
+  2026:[[1,5,1],[2,4,2],[3,6,3],[4,5,4],[5,5,5],[6,6,6],[7,7,7],[8,7,8],[9,8,9],[10,8,10],[11,7,11],[12,7,0]],
+  2027:[[1,5,1],[2,4,2],[3,6,3],[4,5,4],[5,5,5],[6,6,6],[7,7,7],[8,7,8],[9,8,9],[10,8,10],[11,7,11],[12,7,0]],
+};
+
+const TIANYI = {0:[1,7],1:[0,8],2:[11,9],3:[11,9],4:[1,7],5:[0,8],6:[1,7],7:[2,6],8:[3,5],9:[3,5]};
+const WENCHANG = {0:5,1:6,2:8,3:9,4:8,5:9,6:11,7:0,8:2,9:3};
+const FUXING = {0:8,1:8,2:4,3:0,4:5,5:10,6:2,7:2,8:6,9:6,10:11,11:11};
+const KONGMANG_MAP = [[0,9,10,11],[10,19,8,9],[20,29,6,7],[30,39,4,5],[40,49,2,3],[50,59,0,1]];
+const LIUHE = [[0,1],[2,11],[3,10],[4,9],[5,8],[6,7]];
+const SANHE = [[0,4,8],[1,5,9],[2,6,10],[3,7,11]];
+const CHONG = [[0,6],[1,7],[2,8],[3,9],[4,10],[5,11]];
+const WEEKDAYS = ['일','월','화','수','목','금','토'];
+
+// ════════════════════════════════════════════════
+// 2. 사주 풀이 데이터
+// ════════════════════════════════════════════════
+
+const DAYMASTER_INFO = [
+  { hanja:'甲', kr:'갑목', wx:'木', icon:'🌲', title:'큰 나무 — 곧고 강한 개척자',
+    core:'자기 주관이 뚜렷하고 추진력이 강한 리더형입니다.',
+    detail:'갑목(甲木)은 소나무·참나무처럼 하늘을 향해 곧게 뻗는 큰 나무의 기운입니다. 한 번 방향을 정하면 굽히지 않는 강한 의지력과 앞장서서 이끄는 타고난 리더십이 특징입니다. "큰 나무는 한 번 뿌리를 내리면 폭풍에도 쓰러지지 않는다"는 말처럼, 어려운 환경에서도 꿋꿋이 자기 자리를 지킵니다.',
+    talent:'강한 추진력과 도전 정신, 독립심이 남다릅니다. 새로운 분야를 처음 개척하는 역할에서 빛납니다.',
+    caution:'지나친 고집으로 타협이 어려워 보일 수 있습니다. 주변 의견에 귀 기울이는 유연함을 기르면 더욱 큰 인물이 됩니다.',
+    example:'처음으로 숲길을 개척하는 탐험가처럼, 남들이 가지 않은 길을 기꺼이 먼저 걷는 기질입니다.'
+  },
+  { hanja:'乙', kr:'을목', wx:'木', icon:'🌿', title:'넝쿨 — 유연하고 생명력 강한 적응자',
+    core:'어느 환경에서도 잘 적응하며 사람과의 관계에서 빛납니다.',
+    detail:'을목(乙木)은 담쟁이덩굴이나 풀처럼 어느 곳에서든 살아남는 유연한 생명력의 기운입니다. 겉으로는 부드러워 보이지만 내면에는 강한 생존 본능이 있습니다. "물이 돌을 뚫는다"는 말처럼 힘이 아닌 끈기와 유연함으로 결국 목표를 이룹니다.',
+    talent:'뛰어난 적응력과 친화력, 섬세한 공감 능력이 장점입니다. 사람의 마음을 잘 읽고 분위기를 화목하게 만듭니다.',
+    caution:'우유부단해 보이거나 자기 의견을 강하게 표현하기 어려울 때가 있습니다. 결정을 내려야 할 때 과감함을 발휘하면 좋습니다.',
+    example:'조직 내 윤활유 역할을 잘 하며, 예술·문화·상담 분야에서 타고난 재능을 발휘합니다.'
+  },
+  { hanja:'丙', kr:'병화', wx:'火', icon:'☀', title:'태양 — 밝고 열정적인 빛의 존재',
+    core:'긍정 에너지와 열정으로 주변을 환하게 밝히는 존재입니다.',
+    detail:'병화(丙火)는 태양처럼 온 세상을 밝히는 뜨거운 빛의 기운입니다. 타고난 긍정 에너지와 활발한 사교성으로 어디서든 자연스럽게 사람들의 중심이 됩니다. "태양은 모두에게 평등하게 빛을 나눠준다"는 말처럼, 넓은 포용력으로 많은 사람에게 용기와 희망을 줍니다.',
+    talent:'열정, 표현력, 사교성이 탁월합니다. 사람들 앞에 나서는 것을 두려워하지 않고 자신감 있게 자신을 표현합니다.',
+    caution:'감정 기복이 생기거나 여러 곳에 에너지를 분산해 집중력이 흐트러질 수 있습니다. 한 가지에 깊이 파고드는 연습이 도움이 됩니다.',
+    example:'연예인, 교육자, 영업인처럼 사람과 소통하며 빛을 발하는 분야에서 두각을 나타냅니다.'
+  },
+  { hanja:'丁', kr:'정화', wx:'火', icon:'🕯', title:'촛불 — 섬세하고 따뜻한 감성인',
+    core:'세심한 감수성과 따뜻한 공감 능력으로 주변을 감동시킵니다.',
+    detail:'정화(丁火)는 촛불이나 난롯불처럼 어둠 속에서도 따뜻하게 빛을 내는 기운입니다. 크지 않지만 주변을 따뜻하게 비추는 존재로, 섬세한 감수성과 예술적 재능이 뛰어납니다. "작은 촛불 하나가 방 전체를 밝힌다"는 말처럼, 조용하지만 깊은 영향력을 가집니다.',
+    talent:'섬세한 공감 능력, 예술적 감각, 집중력이 뛰어납니다. 다른 사람의 감정을 잘 이해하고 위로하는 능력이 탁월합니다.',
+    caution:'지나치게 감정에 이입하거나 예민해질 수 있습니다. 때로는 한 발 물러서 자신을 보호하는 여유도 필요합니다.',
+    example:'예술가·상담사·교육자처럼 섬세함과 공감이 핵심인 분야에서 크게 빛납니다.'
+  },
+  { hanja:'戊', kr:'무토', wx:'土', icon:'🏔', title:'큰 산 — 든든하고 포용력 있는 기둥',
+    core:'흔들리지 않는 안정감과 넓은 포용력으로 주변의 신뢰를 받습니다.',
+    detail:'무토(戊土)는 태산처럼 묵직하게 자리를 지키는 대지의 기운입니다. 쉽게 흥분하지 않고 신중하게 판단하며, 오랜 시간에 걸쳐 믿음을 쌓아가는 성품입니다. "산은 움직이지 않아도 모든 것을 품는다"는 말처럼, 주변 사람들의 든든한 버팀목이 됩니다.',
+    talent:'안정감, 신뢰성, 포용력, 인내심이 남다릅니다. 한 번 약속하면 끝까지 지키는 강한 책임감이 있습니다.',
+    caution:'변화를 받아들이는 데 시간이 걸리고 지나치게 보수적으로 보일 수 있습니다. 새로운 환경에 적극적으로 열린 마음을 가지면 더욱 성장합니다.',
+    example:'조직의 핵심 기둥 역할을 하며, 사람들이 힘들 때 가장 먼저 찾는 든든한 버팀목 유형입니다.'
+  },
+  { hanja:'己', kr:'기토', wx:'土', icon:'🌾', title:'비옥한 땅 — 실용적이고 헌신적인 돌보미',
+    core:'성실하고 실용적으로 주변을 돌보는 따뜻한 마음의 소유자입니다.',
+    detail:'기토(己土)는 씨앗을 품어 생명을 키우는 비옥한 논밭의 기운입니다. 꼼꼼하고 현실적이며, 자신보다 타인을 먼저 생각하는 헌신적인 마음을 가지고 있습니다. "좋은 땅은 뿌리는 씨앗마다 풍성한 열매를 맺게 한다"는 말처럼, 아이의 잠재력을 최대한 이끌어내는 능력이 있습니다.',
+    talent:'성실함, 실용적 판단력, 세심한 돌봄 능력이 뛰어납니다. 복잡한 상황도 차근차근 현실적으로 해결해 나갑니다.',
+    caution:'자신보다 남을 먼저 챙기다 정작 자신을 소홀히 할 수 있습니다. 자기 자신도 아껴야 더 오래 주변을 돌볼 수 있습니다.',
+    example:'교육자·의료인·사회복지사처럼 남을 돌보고 키우는 분야에서 진정한 보람을 찾습니다.'
+  },
+  { hanja:'庚', kr:'경금', wx:'金', icon:'⚔', title:'강철 — 원칙과 의리의 결단자',
+    core:'강한 원칙과 뚜렷한 의리, 흔들리지 않는 결단력의 소유자입니다.',
+    detail:'경금(庚金)은 잘 벼린 강철처럼 날카롭고 강한 기운입니다. 옳고 그름이 분명하고 원칙과 의리를 중시하며, 어떤 어려운 상황에서도 자신의 신념을 굽히지 않습니다. "잘 벼린 칼은 쉽게 무뎌지지 않는다"는 말처럼, 반복된 단련을 통해 더욱 강해집니다.',
+    talent:'강한 결단력, 의리, 추진력, 굳센 정신력이 특징입니다. 목표를 정하면 어떤 장애물도 돌파하는 힘이 있습니다.',
+    caution:'강직함이 지나쳐 융통성이 부족해 보일 수 있습니다. 상황에 따라 부드럽게 소통하는 법을 배우면 더욱 큰 리더가 됩니다.',
+    example:'군인·운동선수·기업인처럼 강한 의지와 결단이 필요한 분야에서 뛰어난 성과를 냅니다.'
+  },
+  { hanja:'辛', kr:'신금', wx:'金', icon:'💎', title:'보석 — 완벽을 추구하는 심미안',
+    core:'날카로운 관찰력과 높은 심미안, 강한 자존감의 소유자입니다.',
+    detail:'신금(辛金)은 원석에서 정제된 보석처럼 아름다움과 완벽함을 추구하는 기운입니다. 세밀한 부분까지 놓치지 않는 예리한 관찰력이 있고, 자신만의 품격과 기준을 중요시합니다. "보석은 빛을 받을 때 가장 아름답게 빛난다"는 말처럼, 올바른 환경과 인정을 받을 때 최고의 능력을 발휘합니다.',
+    talent:'완벽주의, 심미안, 분석력, 높은 자존감이 강점입니다. 남들이 놓치는 섬세한 부분을 잘 포착합니다.',
+    caution:'예민한 편이라 상처를 쉽게 받을 수 있고, 완벽을 추구하다 스트레스를 받기도 합니다. 때로는 "충분히 좋다"고 인정하는 여유가 필요합니다.',
+    example:'디자이너·예술가·분석가처럼 세밀함과 미적 감각이 중요한 분야에서 탁월한 능력을 발휘합니다.'
+  },
+  { hanja:'壬', kr:'임수', wx:'水', icon:'🌊', title:'큰 강 — 지혜롭고 깊은 사색가',
+    core:'넓은 포용력과 깊은 통찰력, 자유로운 영혼의 소유자입니다.',
+    detail:'임수(壬水)는 깊고 넓은 강이나 바다처럼 모든 것을 담아내는 기운입니다. 다양한 정보를 빠르게 흡수하고 깊이 사유하는 능력이 뛰어납니다. "강물은 모든 개울을 받아들이며 더욱 넓어진다"는 말처럼, 다양한 경험을 통해 더욱 지혜로워지는 성품입니다.',
+    talent:'지혜, 통찰력, 넓은 포용력, 빠른 학습 능력이 두드러집니다. 복잡한 상황에서도 큰 그림을 볼 줄 압니다.',
+    caution:'너무 많은 것을 생각하다 결정이 늦어지거나, 넓게 퍼지다 깊이가 부족해질 수 있습니다. 핵심에 집중하는 연습이 도움이 됩니다.',
+    example:'학자·전략가·외교관처럼 넓은 사고와 깊은 통찰이 필요한 분야에서 빛을 발합니다.'
+  },
+  { hanja:'癸', kr:'계수', wx:'水', icon:'🌧', title:'봄비 — 섬세하고 직관적인 감성인',
+    core:'뛰어난 직관력과 감수성, 부드럽게 스며드는 영향력의 소유자입니다.',
+    detail:'계수(癸水)는 봄비나 이슬처럼 부드럽게 스며드는 기운입니다. 직관력과 감수성이 남달리 뛰어나고, 보이지 않는 것을 느끼는 예민한 감각이 있습니다. "봄비는 소리 없이 대지를 적셔 만물을 소생시킨다"는 말처럼, 조용하지만 깊고 넓은 영향력을 가집니다.',
+    talent:'뛰어난 직관력, 풍부한 감수성, 융통성과 공감 능력이 강점입니다. 말보다 행동으로 주변을 감동시킵니다.',
+    caution:'감정 기복이 있고 주변 분위기에 지나치게 영향을 받을 수 있습니다. 자신만의 내면 중심을 단단히 세우는 것이 중요합니다.',
+    example:'작가·예술가·심리상담사처럼 섬세한 감각과 공감 능력이 핵심인 분야에서 특별한 재능을 발휘합니다.'
+  },
+];
+
+const WUXING_MISSING = [
+  { name:'목(木)이 없습니다', color:'var(--wood)',
+    meaning:'결단력이나 추진력이 필요한 순간 잠시 망설일 수 있습니다. 그러나 충동적인 결정을 피하고 신중하게 행동하는 장점이 있으며, 협력과 조화를 중시하는 성품입니다.',
+    tip:'어떤 일이든 천천히 깊이 생각하고 시작하는 스타일로, 한 번 시작하면 꾸준히 이어나가는 지구력이 강합니다.'
+  },
+  { name:'화(火)가 없습니다', color:'var(--fire)',
+    meaning:'감정 표현이나 열정을 드러내는 것이 다소 서툴 수 있습니다. 그러나 충동적이지 않고 냉정하게 상황을 판단하는 강점이 있어, 중요한 결정에서 실수가 적습니다.',
+    tip:'열정보다 이성을 앞세우는 스타일로, 감정에 휩쓸리지 않고 꾸준히 자신의 길을 걸어갑니다.'
+  },
+  { name:'토(土)가 없습니다', color:'var(--earth)',
+    meaning:'안정을 찾거나 한 곳에 오래 머무는 것이 어려울 수 있습니다. 그러나 그만큼 변화에 유연하고 새로운 환경에 빠르게 적응하는 능력이 뛰어납니다.',
+    tip:'한 가지에 정착하기보다 다양한 경험을 통해 성장하는 유형입니다. 이동이 잦은 직업이나 변화가 많은 환경에서 오히려 빛납니다.'
+  },
+  { name:'금(金)이 없습니다', color:'var(--metal)',
+    meaning:'결단을 내리거나 엄격한 기준을 세우는 것이 다소 어려울 수 있습니다. 그러나 그만큼 유연하고 감성적이며, 상황에 따라 융통성 있게 대응하는 강점이 있습니다.',
+    tip:'규칙이나 원칙보다 사람과의 관계와 감정을 중시하는 스타일로, 인간적인 따뜻함이 넘칩니다.'
+  },
+  { name:'수(水)가 없습니다', color:'var(--water)',
+    meaning:'상황을 유연하게 흘려보내거나 깊이 사유하는 것이 다소 부족할 수 있습니다. 그러나 한 방향으로 곧게 나아가는 직진형 추진력이 강하고, 복잡하게 생각하지 않는 실행력이 뛰어납니다.',
+    tip:'분석보다 실행을 앞세우는 유형으로, "일단 해보자"는 용기와 행동력으로 많은 것을 이뤄냅니다.'
+  },
+];
+
+const MONTH_SEASON = [
+  { branches:[2,3,4], season:'봄(春)', months:'2~4월경', icon:'🌸',
+    meaning:'생명이 깨어나는 봄의 기운을 타고났습니다. 새로운 것에 대한 호기심과 도전 정신이 강하며, 창의적이고 진취적인 성격을 가집니다.',
+    detail:'봄은 씨앗이 싹을 틔우는 계절입니다. 이 시기에 태어난 아이는 목(木)의 기운이 왕성해 추진력과 성장 에너지가 넘칩니다. 무언가를 처음 시작하는 것을 좋아하고, 새로운 환경에서도 빠르게 자신의 자리를 만들어 갑니다.'
+  },
+  { branches:[5,6,7], season:'여름(夏)', months:'5~7월경', icon:'☀',
+    meaning:'뜨거운 태양이 작열하는 여름의 기운을 타고났습니다. 열정과 표현력, 사교성이 풍부하며 활동적이고 활발한 성격을 가집니다.',
+    detail:'여름은 모든 것이 가장 왕성하게 성장하는 계절입니다. 화(火)의 기운이 넘쳐 감정이 풍부하고 표현력이 뛰어납니다. 많은 사람과 어울리기를 좋아하고, 어디서든 에너지를 발산하며 분위기를 이끌어 갑니다.'
+  },
+  { branches:[8,9,10], season:'가을(秋)', months:'8~10월경', icon:'🍂',
+    meaning:'결실을 맺는 가을의 기운을 타고났습니다. 냉철한 판단력과 집중력이 뛰어나며, 목표를 향해 흔들리지 않고 나아가는 성격입니다.',
+    detail:'가을은 봄여름 동안 자란 것들이 열매를 맺는 수확의 계절입니다. 금(金)의 기운이 강해 결단력과 원칙이 뚜렷합니다. 감정보다 이성을 앞세우고, 한 번 목표를 정하면 끝까지 해내는 강인한 의지를 가집니다.'
+  },
+  { branches:[11,0,1], season:'겨울(冬)', months:'11월~1월경', icon:'❄',
+    meaning:'깊은 침묵 속에서 에너지를 키우는 겨울의 기운을 타고났습니다. 지혜롭고 사색적이며, 내면의 깊이가 남다른 성격입니다.',
+    detail:'겨울은 대지가 에너지를 내면에 모아 봄을 준비하는 계절입니다. 수(水)의 기운이 강해 사고력과 통찰력이 뛰어납니다. 겉으로는 조용해 보여도 내면에 깊은 생각과 풍부한 감수성을 품고 있습니다.'
+  },
+];
+
+const STRENGTH_INFO = [
+  { label:'신강(身强)', desc:'일간의 에너지가 강합니다',
+    meaning:'사주 전체에서 일간(태어난 날의 기운)을 도와주는 기운이 많아 에너지가 넘칩니다. 자기 주관이 뚜렷하고 독립적으로 일을 처리하는 능력이 강합니다.',
+    tip:'에너지가 넘치는 만큼, 이를 올바른 방향으로 이끌어줄 교육과 규칙이 중요합니다. 활발한 신체 활동과 다양한 도전 기회를 주세요.'
+  },
+  { label:'신중(身中)', desc:'일간의 에너지가 균형잡혔습니다',
+    meaning:'사주 전체의 기운이 조화롭게 균형을 이루고 있습니다. 이것이 가장 이상적인 상태로, 상황에 따라 유연하게 대응하면서도 자신의 중심을 잃지 않는 안정적인 기질입니다.',
+    tip:'균형 잡힌 사주는 어떤 환경에서도 잘 적응합니다. 다양한 경험을 통해 잠재력을 폭넓게 개발해 주세요.'
+  },
+  { label:'신약(身弱)', desc:'일간의 에너지가 약합니다',
+    meaning:'사주 전체에서 다른 기운이 일간보다 강해 자신보다 주변의 영향을 많이 받는 성향입니다. 협력과 공감 능력이 뛰어나고, 주변의 도움을 잘 활용하는 강점이 있습니다.',
+    tip:'혼자보다 함께할 때 더 빛나는 유형입니다. 좋은 환경과 든든한 지원이 큰 힘이 됩니다. 자신감을 키워주는 격려가 중요합니다.'
+  },
+];
+
+const GUIREN_DETAIL = {
+  tianyi: {
+    name:'천을귀인(天乙貴人)', icon:'☀',
+    meaning:'사주에서 가장 귀한 길성 중 하나입니다. 살면서 어려운 상황에 처했을 때 반드시 도움의 손길이 나타나는 "귀인 운"을 타고났다는 의미입니다.',
+    example:'예를 들어, 큰 시험이나 중요한 면접에서 예상치 못한 행운이 따르거나, 힘든 시기에 꼭 필요한 사람을 만나 위기를 넘기게 됩니다. 마치 어둠 속에서 길을 잃었을 때 누군가 손을 내밀어 주는 것처럼, 평생 보이지 않는 보호막이 함께합니다.',
+    benefit:'직업운, 대인관계, 위기 극복 능력이 뛰어납니다.'
+  },
+  wenchang: {
+    name:'문창귀인(文昌貴人)', icon:'✏',
+    meaning:'학문과 지식, 문서·시험 운이 탁월한 길성입니다. 타고난 지적 능력과 공부에 대한 흥미가 강하다는 의미입니다.',
+    example:'예를 들어, 공부를 즐기고 시험에서 좋은 결과를 내는 경우가 많습니다. 글쓰기, 발표, 논문처럼 지식을 표현하는 분야에서 특히 두각을 나타냅니다. "책을 손에 잡으면 내려놓기 어렵다"는 말처럼 지식에 대한 열망이 강합니다.',
+    benefit:'학업 성취, 자격증·시험 운, 창작 활동, 전문직 진출에 유리합니다.'
+  },
+  fuxing: {
+    name:'복성귀인(福星貴人)', icon:'★',
+    meaning:'타고난 복록(福祿)과 인복(人福)을 의미하는 길성입니다. 평생 먹을 것과 입을 것에 부족함이 없고, 주변에 좋은 사람들이 모이는 복을 가졌다는 뜻입니다.',
+    example:'예를 들어, 특별히 노력하지 않아도 좋은 인연이 자연스럽게 연결되거나, 어려운 시기에도 생활에 큰 어려움이 없는 경우가 많습니다. "복이 있는 사람에게는 복이 또 복을 부른다"는 말처럼, 선순환의 흐름을 타는 운명입니다.',
+    benefit:'재물운, 인복, 생활의 안정, 좋은 인간관계가 평생 함께합니다.'
+  },
+};
+
+const KONGMANG_DETAIL = {
+  none: {
+    label:'공망 없음 ✓', color:'var(--wood)',
+    meaning:'사주의 8글자 중 공망(空亡, 에너지가 빠져나가는 자리)이 없습니다. 이것은 매우 좋은 신호입니다.',
+    detail:'공망이 없다는 것은 사주의 모든 기운이 빠짐없이 온전하게 작동한다는 의미입니다. 계획한 일이 헛수고로 돌아가는 경우가 적고, 쌓은 노력이 실질적인 결과로 이어집니다.',
+    example:'마치 밑 빠진 독에 물을 붓는 것이 아니라, 완전한 항아리에 물을 채우는 것처럼 노력이 고스란히 쌓입니다.'
+  },
+  hour: {
+    label:'시주 공망', color:'var(--earth)',
+    meaning:'시주(時柱, 태어난 시간의 기운)에 공망이 있습니다.',
+    detail:'시주의 공망은 노년운이나 자녀운에 다소 영향을 줄 수 있지만, 4개 기둥 중 영향이 가장 적은 편입니다. 노력의 결실을 맺는 시기가 늦어질 수 있지만, 꾸준함으로 충분히 극복할 수 있습니다.',
+    example:'젊을 때보다 중·장년 이후에 더 안정되고 빛나는 경우가 많습니다.'
+  },
+  day: {
+    label:'일주 공망 주의', color:'var(--fire)',
+    meaning:'일주(日柱, 태어난 날의 기운)에 공망이 있습니다.',
+    detail:'일주는 사주의 핵심인 일간(자신)의 기운을 나타냅니다. 공망이 있으면 자신이 주도적으로 이끌어가려 할 때 예상치 못한 장벽을 만나거나, 노력 대비 결과가 아쉬울 때가 있을 수 있습니다. 그러나 이를 알고 준비하면 충분히 보완할 수 있습니다.',
+    example:'계획보다 실행을, 결과보다 과정을 즐기는 자세를 기르면 삶이 더욱 풍요로워집니다.'
+  },
+  both: {
+    label:'일·시주 공망 주의', color:'var(--fire)',
+    meaning:'일주와 시주 모두에 공망이 있습니다.',
+    detail:'두 기둥에 공망이 겹치면 노력이 결과로 이어지기까지 더 많은 인내와 꾸준함이 필요할 수 있습니다. 그러나 사주에서 공망은 영적·종교적 감수성이 뛰어나다는 의미이기도 하며, 철학적 사고와 깊은 내면세계를 가진 인물이 되기도 합니다.',
+    example:'세속적 성공보다 깊은 가치와 의미를 추구하는 삶에서 진정한 행복을 찾는 경우가 많습니다.'
+  },
+};
+
+// ════════════════════════════════════════════════
+// 3. 사주 계산
+// ════════════════════════════════════════════════
+
+function julianDay(y,m,d){
+  const a=Math.floor((14-m)/12),yy=y+4800-a,mm=m+12*a-3;
+  return d+Math.floor((153*mm+2)/5)+365*yy+Math.floor(yy/4)-Math.floor(yy/100)+Math.floor(yy/400)-32045;
+}
+function getSajuYear(y,m,d){
+  const ip=IPCHUN[y]||[2,4];
+  return (m<ip[0]||(m===ip[0]&&d<ip[1]))?y-1:y;
+}
+function getYearPillar(y,m,d){
+  const sy=getSajuYear(y,m,d),idx=((sy-4)%60+60)%60;
+  return {stem:idx%10,branch:idx%12,idx};
+}
+function getMonthBranch(y,m,d){
+  const terms=SOLAR_TERMS[y]||SOLAR_TERMS[2026];
+  let branch=1;
+  for(const [tm,td,tb] of terms) if(m>tm||(m===tm&&d>=td)) branch=tb;
+  return branch;
+}
+function getMonthPillar(y,m,d){
+  const yp=getYearPillar(y,m,d),mb=getMonthBranch(y,m,d);
+  const BASE=[2,4,6,8,0,2,4,6,8,0];
+  const ms=(BASE[yp.stem]+((mb-2+12)%12))%10;
+  return {stem:ms,branch:mb};
+}
+function getDayPillar(y,m,d){
+  const jdn=julianDay(y,m,d),idx=((jdn-2451545+54)%60+60)%60;
+  return {stem:idx%10,branch:idx%12,idx};
+}
+function getHourPillar(ds,hb){
+  const BASE=[0,2,4,6,8,0,2,4,6,8];
+  return {stem:(BASE[ds]+hb)%10,branch:hb};
+}
+function calcSaju(y,m,d,hb){
+  const yr=getYearPillar(y,m,d),mo=getMonthPillar(y,m,d),dy=getDayPillar(y,m,d);
+  return {year:yr,month:mo,day:dy,hour:getHourPillar(dy.stem,hb)};
+}
+function parseDate(s){const[y,m,d]=s.split('-').map(Number);return{y,m,d};}
+
+// ════════════════════════════════════════════════
+// 4. 오행 유틸
+// ════════════════════════════════════════════════
+
+function wxGen(a,b){return(a+1)%5===b;}
+function wxCtrl(a,b){return(a+2)%5===b;}
+function getElementDist(saju){
+  const dist=[0,0,0,0,0];
+  for(const p of [saju.year,saju.month,saju.day,saju.hour]){
+    dist[TG_WX[p.stem]]++;dist[DZ_WX[p.branch]]++;
+  }
+  return dist;
+}
+
+// ════════════════════════════════════════════════
+// 5. 점수 계산
+// ════════════════════════════════════════════════
+
+function scoreWuxingBalance(saju){
+  const dist=getElementDist(saju);
+  const present=dist.filter(v=>v>0).length;
+  const presenceScore=present*2;
+  const mean=8/5,variance=dist.reduce((s,v)=>s+(v-mean)**2,0)/5;
+  const balanceScore=10*Math.max(0,1-Math.sqrt(variance)/Math.sqrt(8));
+  return Math.round(presenceScore+balanceScore);
+}
+function scoreDayStrength(saju){
+  const dayEl=TG_WX[saju.day.stem];
+  let support=0,oppose=0;
+  for(const p of [saju.year,saju.month,saju.hour]){
+    for(const el of [TG_WX[p.stem],DZ_WX[p.branch]]){
+      if(el===dayEl) support+=2;
+      else if(wxGen(el,dayEl)) support+=1;
+      else if(wxCtrl(el,dayEl)) oppose+=2;
+      else if(wxGen(dayEl,el)) oppose+=0.5;
+    }
+  }
+  const monthEl=DZ_WX[saju.month.branch];
+  if(monthEl===dayEl) support+=3;
+  else if(wxGen(monthEl,dayEl)) support+=2;
+  const total=support+oppose;
+  if(total===0) return 10;
+  const dist=Math.abs(support/total-0.5);
+  if(dist<=0.15) return 15;
+  if(dist<=0.25) return 11;
+  if(dist<=0.35) return 7;
+  return 4;
+}
+function getDayStrengthLabel(saju){
+  const dayEl=TG_WX[saju.day.stem];
+  let support=0,oppose=0;
+  for(const p of [saju.year,saju.month,saju.hour]){
+    for(const el of [TG_WX[p.stem],DZ_WX[p.branch]]){
+      if(el===dayEl) support+=2;
+      else if(wxGen(el,dayEl)) support+=1;
+      else if(wxCtrl(el,dayEl)) oppose+=2;
+      else if(wxGen(dayEl,el)) oppose+=0.5;
+    }
+  }
+  const monthEl=DZ_WX[saju.month.branch];
+  if(monthEl===dayEl) support+=3; else if(wxGen(monthEl,dayEl)) support+=2;
+  const total=support+oppose;
+  if(total===0) return 1;
+  const ratio=support/total;
+  if(ratio>=0.6) return 0; // 신강
+  if(ratio>=0.4) return 1; // 신중
+  return 2; // 신약
+}
+function scoreGuiren(saju){
+  const br=[saju.year.branch,saju.month.branch,saju.day.branch,saju.hour.branch];
+  let score=0;
+  const found={tianyi:false,wenchang:false,fuxing:false};
+  const ty=TIANYI[saju.day.stem]||[];
+  if(br.some(b=>ty.includes(b))){score+=5;found.tianyi=true;}
+  if(br.includes(WENCHANG[saju.day.stem])){score+=5;found.wenchang=true;}
+  if(br.includes(FUXING[saju.year.branch])){score+=5;found.fuxing=true;}
+  return{score:Math.min(15,score),found};
+}
+function scoreKongmang(saju){
+  const di=saju.day.idx;
+  let v1=-1,v2=-1;
+  for(const [s,e,a,b] of KONGMANG_MAP) if(di>=s&&di<=e){v1=a;v2=b;break;}
+  const db=saju.day.branch,hb=saju.hour.branch;
+  const dv=(db===v1||db===v2),hv=(hb===v1||hb===v2);
+  if(!dv&&!hv) return{score:10,type:'none',voids:[]};
+  if(dv&&hv) return{score:2,type:'both',voids:[v1,v2]};
+  if(dv) return{score:4,type:'day',voids:[v1,v2]};
+  return{score:7,type:'hour',voids:[v1,v2]};
+}
+function scoreBaby(saju){
+  const wb=scoreWuxingBalance(saju),ds=scoreDayStrength(saju);
+  const gr=scoreGuiren(saju),km=scoreKongmang(saju);
+  return{wuxingBalance:wb,dayStrength:ds,guiren:gr.score,guirenFound:gr.found,kongmang:km.score,kongmangType:km.type,kongmangVoids:km.voids,total:wb+ds+gr.score+km.score};
+}
+function branchRel(a,b){
+  for(const p of LIUHE) if(p.includes(a)&&p.includes(b)) return 1;
+  for(const p of CHONG) if(p.includes(a)&&p.includes(b)) return -1;
+  return 0;
+}
+function inSanhe(a,b){return SANHE.some(g=>g.includes(a)&&g.includes(b));}
+function scoreCompat(babySaju,parSaju){
+  if(!parSaju) return{score:10,detail:{elemScore:5,branchScore:3,sanheScore:2}};
+  const bDE=TG_WX[babySaju.day.stem],pDE=TG_WX[parSaju.day.stem];
+  const bYE=TG_WX[babySaju.year.stem],pYE=TG_WX[parSaju.year.stem];
+  let elemScore=0;
+  for(const [pEl,bEl] of [[pDE,bDE],[pYE,bYE]]){
+    if(pEl===bEl) elemScore+=4;
+    else if(wxGen(pEl,bEl)) elemScore+=5;
+    else if(wxGen(bEl,pEl)) elemScore+=3;
+    else if(wxCtrl(pEl,bEl)) elemScore+=1;
+    else elemScore+=2;
+  }
+  elemScore=Math.min(10,elemScore);
+  const bBr=[babySaju.year.branch,babySaju.month.branch,babySaju.day.branch,babySaju.hour.branch];
+  const pBr=parSaju.hour?[parSaju.year.branch,parSaju.month.branch,parSaju.day.branch,parSaju.hour.branch]:[parSaju.year.branch,parSaju.month.branch,parSaju.day.branch];
+  let branchRaw=3;
+  for(const bb of bBr) for(const pb of pBr) branchRaw+=branchRel(bb,pb);
+  const branchScore=Math.max(0,Math.min(6,branchRaw));
+  const sanheScore=inSanhe(babySaju.year.branch,parSaju.year.branch)?4:0;
+  return{score:Math.min(20,elemScore+branchScore+sanheScore),detail:{elemScore,branchScore,sanheScore}};
+}
+function calcScore(babySaju,fSaju,mSaju){
+  const baby=scoreBaby(babySaju),father=scoreCompat(babySaju,fSaju),mother=scoreCompat(babySaju,mSaju);
+  return{baby,father,mother,total:baby.total+father.score+mother.score};
+}
+
+// 상위 퍼센트 계산 (전체 168개 대비)
+function calcPercentile(score, allScores){
+  const better=allScores.filter(s=>s>score).length;
+  return Math.round((better+1)/allScores.length*100);
+}
+
+// ════════════════════════════════════════════════
+// 6. 날짜 유틸
+// ════════════════════════════════════════════════
+
+function addDays(y,m,d,n){const dt=new Date(y,m-1,d+n);return{y:dt.getFullYear(),m:dt.getMonth()+1,d:dt.getDate()};}
+function fmt(y,m,d){return y+'년 '+m+'월 '+d+'일';}
+function wday(y,m,d){return WEEKDAYS[new Date(y,m-1,d).getDay()];}
+function isWE(y,m,d){const w=new Date(y,m-1,d).getDay();return w===0||w===6;}
+function pillarTxt(p){return TG[p.stem]+DZ[p.branch];}
+function sajuFull(s){return [s.year,s.month,s.day,s.hour].map(pillarTxt).join(' ');}
+
+// ════════════════════════════════════════════════
+// 7. 분석 실행
+// ════════════════════════════════════════════════
+
+let _allScores=[];
+
+function runAnalysis(dueDateStr,fDobStr,fHour,mDobStr,mHour){
+  const due=parseDate(dueDateStr),fd=parseDate(fDobStr),md=parseDate(mDobStr);
+  const fh=fHour!==null?fHour:6,mh=mHour!==null?mHour:6;
+  const fSaju=calcSaju(fd.y,fd.m,fd.d,fh),mSaju=calcSaju(md.y,md.m,md.d,mh);
+  const results=[];
+  for(let i=0;i<14;i++){
+    const {y,m,d}=addDays(due.y,due.m,due.d,i-13);
+    const hrs=[];
+    for(let hb=0;hb<12;hb++){
+      const saju=calcSaju(y,m,d,hb);
+      hrs.push({hb,saju,score:calcScore(saju,fSaju,mSaju)});
+    }
+    hrs.sort((a,b)=>b.score.total-a.score.total);
+    results.push({y,m,d,dayOffset:i,hourResults:hrs});
+  }
+  // 전체 168개 점수 수집
+  _allScores=results.flatMap(r=>r.hourResults.map(h=>h.score.total)).sort((a,b)=>a-b);
+  results.forEach(r=>r.bestScore=r.hourResults[0].score);
+  results.sort((a,b)=>b.bestScore.total-a.bestScore.total);
+  return{results,fSaju,mSaju};
+}
+
+// ════════════════════════════════════════════════
+// 8. HTML 빌더
+// ════════════════════════════════════════════════
+
+function gradeClass(v,max){
+  const r=v/max;
+  if(r>=0.85) return 'grade-s';
+  if(r>=0.70) return 'grade-a';
+  if(r>=0.55) return 'grade-b';
+  return 'grade-c';
+}
+
+function buildPercentileBadge(score){
+  const pct=calcPercentile(score,_allScores);
+  let cls='pct-low';
+  if(pct<=5)  cls='pct-top';
+  else if(pct<=15) cls='pct-high';
+  else if(pct<=35) cls='pct-mid';
+  return '<span class="pct-badge '+cls+'">상위 '+pct+'%</span>';
+}
+
+function buildPillarTable(saju){
+  const labels=['연주','월주','일주','시주'];
+  const pillars=[saju.year,saju.month,saju.day,saju.hour];
+  let html='<div class="pillar-table">';
+  for(let i=0;i<4;i++){
+    const p=pillars[i],wx=TG_WX[p.stem];
+    html+='<div class="pillar-cell">'
+      +'<div class="pillar-label">'+labels[i]+'</div>'
+      +'<div class="pillar-hanja" style="color:'+WX_COLOR[wx]+'">'+TG[p.stem]+DZ[p.branch]+'</div>'
+      +'<div class="pillar-kr">'+TG_KR[p.stem]+DZ_KR[p.branch]+'</div>'
+      +'<div class="pillar-element" style="color:'+WX_COLOR[wx]+'">'+WX[wx]+'</div>'
+      +'</div>';
+  }
+  return html+'</div>';
+}
+
+function buildWuxingBar(saju){
+  const dist=getElementDist(saju);
+  let html='<div class="wuxing-bar">';
+  for(let i=0;i<5;i++){
+    html+='<div class="wuxing-item">'
+      +'<div class="wuxing-dot '+WX_CLS[i]+'"></div>'
+      +'<span style="color:'+WX_COLOR[i]+'">'+WX_HANJA[i]+'</span>'
+      +'<span class="wuxing-count">'+dist[i]+'</span>'
+      +'</div>';
+  }
+  return html+'</div>';
+}
+
+function buildBadges(found,voids){
+  let html='<div class="guiren-badges">';
+  if(found.tianyi)   html+='<span class="badge badge-tianyi">☀ 천을귀인</span>';
+  if(found.wenchang) html+='<span class="badge badge-wenchang">✏ 문창귀인</span>';
+  if(found.fuxing)   html+='<span class="badge badge-fuxing">★ 복성귀인</span>';
+  if(voids.length>0) html+='<span class="badge badge-kongmang">空 공망주의</span>';
+  if(!found.tianyi&&!found.wenchang&&!found.fuxing&&voids.length===0)
+    html+='<span class="badge" style="background:rgba(76,175,114,.1);border:1px solid rgba(76,175,114,.3);color:var(--wood)">✓ 공망 없음</span>';
+  return html+'</div>';
+}
+
+function buildScoreBreakdown(score){
+  const {baby,father,mother}=score;
+  const compatTotal=father.score+mother.score;
+  const pct=(v,max)=>Math.round(v/max*100);
+  return '<div class="score-breakdown">'
+    +'<div class="score-section">'
+    +'<div class="score-section-title">아기 사주 품질 ('+baby.total+'/60)</div>'
+    +'<div class="score-row"><span class="score-row-label">오행 균형</span>'
+    +'<div class="score-bar-wrap"><div class="score-bar-fill baby-bar" style="width:'+pct(baby.wuxingBalance,20)+'%"></div></div>'
+    +'<span class="score-row-val">'+baby.wuxingBalance+'/20</span></div>'
+    +'<div class="score-row"><span class="score-row-label">일간 강도</span>'
+    +'<div class="score-bar-wrap"><div class="score-bar-fill baby-bar" style="width:'+pct(baby.dayStrength,15)+'%"></div></div>'
+    +'<span class="score-row-val">'+baby.dayStrength+'/15</span></div>'
+    +'<div class="score-row"><span class="score-row-label">귀인·길성</span>'
+    +'<div class="score-bar-wrap"><div class="score-bar-fill baby-bar" style="width:'+pct(baby.guiren,15)+'%"></div></div>'
+    +'<span class="score-row-val">'+baby.guiren+'/15</span></div>'
+    +'<div class="score-row"><span class="score-row-label">공망 회피</span>'
+    +'<div class="score-bar-wrap"><div class="score-bar-fill baby-bar" style="width:'+pct(baby.kongmang,10)+'%"></div></div>'
+    +'<span class="score-row-val">'+baby.kongmang+'/10</span></div>'
+    +'</div>'
+    +'<div class="score-section">'
+    +'<div class="score-section-title">부모 궁합 ('+compatTotal+'/40)</div>'
+    +'<div class="score-row"><span class="score-row-label">아버지 궁합</span>'
+    +'<div class="score-bar-wrap"><div class="score-bar-fill compat-bar" style="width:'+pct(father.score,20)+'%"></div></div>'
+    +'<span class="score-row-val">'+father.score+'/20</span></div>'
+    +'<div class="score-row"><span class="score-row-label">어머니 궁합</span>'
+    +'<div class="score-bar-wrap"><div class="score-bar-fill compat-bar" style="width:'+pct(mother.score,20)+'%"></div></div>'
+    +'<span class="score-row-val">'+mother.score+'/20</span></div>'
+    +'<div class="score-row"><span class="score-row-label">오행 상생</span>'
+    +'<div class="score-bar-wrap"><div class="score-bar-fill compat-bar" style="width:'+pct(father.detail.elemScore+mother.detail.elemScore,20)+'%"></div></div>'
+    +'<span class="score-row-val">'+(father.detail.elemScore+mother.detail.elemScore)+'/20</span></div>'
+    +'<div class="score-row"><span class="score-row-label">지지·삼합</span>'
+    +'<div class="score-bar-wrap"><div class="score-bar-fill compat-bar" style="width:'+pct(father.detail.branchScore+father.detail.sanheScore+mother.detail.branchScore+mother.detail.sanheScore,20)+'%"></div></div>'
+    +'<span class="score-row-val">'+(father.detail.branchScore+father.detail.sanheScore+mother.detail.branchScore+mother.detail.sanheScore)+'/20</span></div>'
+    +'</div></div>';
+}
+
+// ─── 상세 사주 풀이 빌더 ───────────────────────
+
+function buildInterpretation(saju, score){
+  const dm = DAYMASTER_INFO[saju.day.stem];
+  const dist = getElementDist(saju);
+  const monthBranch = saju.month.branch;
+  const strengthIdx = getDayStrengthLabel(saju);
+  const si = STRENGTH_INFO[strengthIdx];
+  const ki = KONGMANG_DETAIL[score.baby.kongmangType];
+
+  // 계절 찾기
+  const season = MONTH_SEASON.find(s=>s.branches.includes(monthBranch)) || MONTH_SEASON[0];
+
+  // 부족한 오행
+  const missingEls = dist.map((v,i)=>v===0?i:-1).filter(i=>i>=0);
+  // 과다한 오행 (3개 이상)
+  const excessEls = dist.map((v,i)=>v>=3?i:-1).filter(i=>i>=0);
+
+  // 아버지·어머니 오행 관계 설명
+  function compatDesc(parSaju, label){
+    if(!parSaju) return '';
+    const pEl = TG_WX[parSaju.day.stem];
+    const bEl = TG_WX[saju.day.stem];
+    let rel = '';
+    if(pEl===bEl) rel = label+'와(과) 아기의 기운이 <b>같은 오행</b>입니다. 서로 잘 이해하고 공감하며 비슷한 성향을 공유합니다.';
+    else if(wxGen(pEl,bEl)) rel = '<b>'+label+'의 기운('+WX[pEl]+')</b>이 아기의 기운('+WX[bEl]+')을 <b>생하고 키워줍니다.</b> 부모가 아이에게 자연스럽게 에너지를 주는 이상적인 관계입니다. 부모의 지원과 사랑이 아이를 크게 성장시킵니다.';
+    else if(wxGen(bEl,pEl)) rel = '아기의 기운('+WX[bEl]+')이 '+label+'의 기운('+WX[pEl]+')을 생해줍니다. 아이가 부모에게 활력과 에너지를 주는 관계입니다. 서로 보완하며 함께 성장하는 구조입니다.';
+    else if(wxCtrl(pEl,bEl)) rel = label+'의 기운('+WX[pEl]+')이 아기의 기운('+WX[bEl]+')을 <b>다소 억제</b>합니다. 갈등 가능성이 있지만, 동시에 아이에게 규율과 방향을 제시하는 관계이기도 합니다. 대화와 격려가 더욱 중요합니다.';
+    else rel = '서로 다른 오행으로, <b>독립적인 에너지</b>를 가집니다. 각자의 개성을 존중하며 조화를 이루는 관계입니다.';
+    return rel;
+  }
+
+  let html = '<div class="interp-wrap">';
+
+  // ① 일간 기질
+  html += '<div class="interp-section">'
+    +'<div class="interp-head"><span class="interp-icon">'+dm.icon+'</span>'
+    +'<span class="interp-title">일간 기질 — '+dm.hanja+'('+dm.kr+') · '+dm.title+'</span></div>'
+    +'<div class="interp-body">'
+    +'<div class="interp-core">'+dm.core+'</div>'
+    +'<p>'+dm.detail+'</p>'
+    +'<div class="interp-row"><span class="interp-label">타고난 강점</span><span>'+dm.talent+'</span></div>'
+    +'<div class="interp-row"><span class="interp-label">보완할 점</span><span>'+dm.caution+'</span></div>'
+    +'<div class="interp-example">💡 '+dm.example+'</div>'
+    +'</div></div>';
+
+  // ② 오행 분포
+  html += '<div class="interp-section">'
+    +'<div class="interp-head"><span class="interp-icon">⚖</span>'
+    +'<span class="interp-title">오행 분포 분석</span></div>'
+    +'<div class="interp-body">';
+
+  // 과다 오행
+  if(excessEls.length>0){
+    excessEls.forEach(i=>{
+      html += '<div class="interp-row">'
+        +'<span class="interp-label" style="color:'+WX_COLOR[i]+'">'+WX_HANJA[i]+' 과다</span>'
+        +'<span><b>'+WX[i]+'의 기운이 매우 강합니다.</b> '+dm.wx==='木'?'':'';
+      // 간단한 과다 설명
+      const excessDesc = [
+        '추진력과 고집이 매우 강합니다. 하고 싶은 것을 향한 열정이 넘치지만, 때로는 주변의 의견을 듣는 균형이 필요합니다.',
+        '열정과 감수성이 넘칩니다. 표현력이 뛰어나고 활발하지만, 에너지 소모가 크므로 충분한 휴식이 중요합니다.',
+        '안정을 추구하고 신중한 성격이 강합니다. 든든하지만 변화에 적응하는 유연함을 기르면 더욱 풍요로워집니다.',
+        '결단력과 원칙이 강합니다. 의지가 강하지만 지나치게 엄격해지지 않도록 부드러운 면도 키워주세요.',
+        '지혜와 사고력이 풍부합니다. 생각이 깊지만 때로는 과감하게 행동하는 연습이 필요합니다.',
+      ];
+      html += excessDesc[i]+'</span></div>';
+    });
+  }
+
+  // 부족 오행
+  if(missingEls.length>0){
+    missingEls.forEach(i=>{
+      const m=WUXING_MISSING[i];
+      html += '<div class="interp-row">'
+        +'<span class="interp-label" style="color:'+WX_COLOR[i]+'">'+m.name+'</span>'
+        +'<span>'+m.meaning+' <em>'+m.tip+'</em></span></div>';
+    });
+  } else {
+    html += '<div class="interp-ok">✓ 오행 5가지가 모두 갖춰져 있습니다. 특정 기운에 치우치지 않는 균형 잡힌 사주입니다.</div>';
+  }
+  html += '</div></div>';
+
+  // ③ 계절 기운
+  html += '<div class="interp-section">'
+    +'<div class="interp-head"><span class="interp-icon">'+season.icon+'</span>'
+    +'<span class="interp-title">태어난 계절 — '+season.season+' ('+season.months+')</span></div>'
+    +'<div class="interp-body">'
+    +'<div class="interp-core">'+season.meaning+'</div>'
+    +'<p>'+season.detail+'</p>'
+    +'</div></div>';
+
+  // ④ 일간 강약
+  html += '<div class="interp-section">'
+    +'<div class="interp-head"><span class="interp-icon">⚡</span>'
+    +'<span class="interp-title">일간 강약 — '+si.label+' ('+si.desc+')</span></div>'
+    +'<div class="interp-body">'
+    +'<p>'+si.meaning+'</p>'
+    +'<div class="interp-row"><span class="interp-label">양육 포인트</span><span>'+si.tip+'</span></div>'
+    +'</div></div>';
+
+  // ⑤ 귀인·길성
+  const hasGuiren = score.baby.guirenFound.tianyi||score.baby.guirenFound.wenchang||score.baby.guirenFound.fuxing;
+  if(hasGuiren){
+    html += '<div class="interp-section">'
+      +'<div class="interp-head"><span class="interp-icon">✨</span>'
+      +'<span class="interp-title">귀인·길성</span></div>'
+      +'<div class="interp-body">';
+    for(const [key,found] of Object.entries(score.baby.guirenFound)){
+      if(!found) continue;
+      const g=GUIREN_DETAIL[key];
+      html += '<div class="interp-guiren">'
+        +'<div class="interp-guiren-title">'+g.icon+' '+g.name+'</div>'
+        +'<p>'+g.meaning+'</p>'
+        +'<p>'+g.example+'</p>'
+        +'<div class="interp-row"><span class="interp-label">핵심 혜택</span><span>'+g.benefit+'</span></div>'
+        +'</div>';
+    }
+    html += '</div></div>';
+  }
+
+  // ⑥ 공망
+  html += '<div class="interp-section">'
+    +'<div class="interp-head"><span class="interp-icon">🔮</span>'
+    +'<span class="interp-title">공망 분석 — '+ki.label+'</span></div>'
+    +'<div class="interp-body">'
+    +'<p style="color:'+ki.color+'"><b>'+ki.meaning+'</b></p>'
+    +'<p>'+ki.detail+'</p>'
+    +'<div class="interp-example">💡 '+ki.example+'</div>'
+    +'</div></div>';
+
+  html += '</div>'; // interp-wrap
+  return html;
+}
+
+// ════════════════════════════════════════════════
+// 9. 렌더링
+// ════════════════════════════════════════════════
+
+let _results=[],_sortMode='total';
+
+function getSortVal(r){
+  if(_sortMode==='baby')   return r.hourResults[0].score.baby.total;
+  if(_sortMode==='compat') return r.hourResults[0].score.father.score+r.hourResults[0].score.mother.score;
+  return r.hourResults[0].score.total;
+}
+function sorted(){return[..._results].sort((a,b)=>getSortVal(b)-getSortVal(a));}
+
+function renderTopList(list){
+  const c=document.getElementById('top-list');
+  c.innerHTML=list.slice(0,5).map((r,i)=>{
+    const best=r.hourResults[0];
+    const wdcls=isWE(r.y,r.m,r.d)?' day-weekend':'';
+    const pct=buildPercentileBadge(best.score.total);
+    return '<div class="top-card rank-'+(i+1)+'" data-day="'+r.dayOffset+'">'
+      +'<div class="rank-badge">'+(i+1)+'</div>'
+      +'<div class="top-card-date'+wdcls+'">'+r.m+'월 '+r.d+'일 ('+wday(r.y,r.m,r.d)+')</div>'
+      +'<div class="top-card-time">'+HOURS[best.hb].name+' '+HOURS[best.hb].time+'</div>'
+      +'<div class="top-card-saju">'+sajuFull(best.saju)+'</div>'
+      +'<div class="top-card-score '+gradeClass(best.score.total,100)+'">'+best.score.total+'<span>/100</span></div>'
+      +pct
+      +'</div>';
+  }).join('');
+  c.querySelectorAll('.top-card').forEach(el=>el.addEventListener('click',()=>showDetail(Number(el.dataset.day))));
+}
+
+function renderFullList(list){
+  const c=document.getElementById('full-list');
+  c.innerHTML=list.map((r,rank)=>{
+    const best=r.hourResults[0];
+    const wdcls=isWE(r.y,r.m,r.d)?' day-weekend':'';
+    const pct=buildPercentileBadge(best.score.total);
+    return '<div class="day-row" id="dayrow-'+r.dayOffset+'">'
+      +'<div class="day-row-header" data-day="'+r.dayOffset+'">'
+      +'<div class="day-rank'+(rank<3?' top3':'')+'">'+((rank+1))+'</div>'
+      +'<div class="day-info">'
+      +'<div class="day-date-line">'+r.m+'월 '+r.d+'일 <span class="day-weekday'+wdcls+'">('+wday(r.y,r.m,r.d)+')</span></div>'
+      +'<div class="day-best-time">추천: '+HOURS[best.hb].name+' '+HOURS[best.hb].time+'</div>'
+      +'<div class="day-saju-text">'+sajuFull(best.saju)+'</div>'
+      +'</div>'
+      +'<div class="day-score-col">'
+      +'<div class="score-total '+gradeClass(best.score.total,100)+'">'+best.score.total+'<span>/100</span></div>'
+      +pct
+      +'<div class="score-mini-bars">'
+      +'<div class="mini-bar baby" style="width:'+best.score.baby.total*0.5+'px"></div>'
+      +'<div class="mini-bar compat" style="width:'+(best.score.father.score+best.score.mother.score)*0.5+'px"></div>'
+      +'</div></div></div>'
+      +'<button class="day-expand-btn" data-day="'+r.dayOffset+'"><span class="arrow">▼</span> 시간대별 보기</button>'
+      +'<div class="day-detail-panel" id="panel-'+r.dayOffset+'">'
+      +buildWuxingBar(best.saju)
+      +buildBadges(best.score.baby.guirenFound,best.score.baby.kongmangVoids)
+      +buildScoreBreakdown(best.score)
+      +'<div style="margin-top:.7rem;text-align:center">'
+      +'<button class="btn-back" style="font-size:.8rem;" data-detail="'+r.dayOffset+'">→ 시간대 전체 분석 보기</button>'
+      +'</div></div></div>';
+  }).join('');
+
+  c.querySelectorAll('.day-expand-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const day=Number(btn.dataset.day);
+      const panel=document.getElementById('panel-'+day);
+      const open=panel.classList.contains('open');
+      panel.classList.toggle('open',!open);
+      btn.classList.toggle('open',!open);
+    });
+  });
+  c.querySelectorAll('.day-row-header').forEach(h=>h.addEventListener('click',()=>showDetail(Number(h.dataset.day))));
+  c.querySelectorAll('[data-detail]').forEach(btn=>btn.addEventListener('click',e=>{e.stopPropagation();showDetail(Number(btn.dataset.detail));}));
+}
+
+function showDetail(dayOffset){
+  const r=_results.find(x=>x.dayOffset===dayOffset);
+  if(!r) return;
+
+  document.getElementById('detail-title').textContent=fmt(r.y,r.m,r.d)+' ('+wday(r.y,r.m,r.d)+') 상세 분석';
+
+  const best=r.hourResults[0];
+  document.getElementById('detail-saju-summary').innerHTML=
+    '<div style="margin-bottom:.8rem;display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;">'
+    +'<span style="font-size:.82rem;color:var(--text2);">베스트 시간: </span>'
+    +'<span style="color:var(--gold);font-weight:600;">'+HOURS[best.hb].name+' ('+HOURS[best.hb].time+')</span>'
+    +'<span style="font-size:.82rem;color:var(--text3);">총점 '+best.score.total+'점</span>'
+    +buildPercentileBadge(best.score.total)
+    +'</div>'
+    +buildPillarTable(best.saju)+buildWuxingBar(best.saju)+buildBadges(best.score.baby.guirenFound,best.score.baby.kongmangVoids);
+
+  const hl=document.getElementById('detail-hour-list');
+  hl.innerHTML=r.hourResults.map((h,i)=>{
+    const isBest=i===0;
+    const pct=buildPercentileBadge(h.score.total);
+    const interpId='interp-'+dayOffset+'-'+h.hb;
+    return '<div class="hour-row'+(isBest?' best-hour':'')+'" id="hrow-'+dayOffset+'-'+h.hb+'">'
+      +'<div class="hour-row-header" data-day="'+dayOffset+'" data-hb="'+h.hb+'">'
+      +'<div>'
+      +'<div class="hour-name">'+HOURS[h.hb].name+(isBest?' ★':'')+'</div>'
+      +'<div class="hour-time">'+HOURS[h.hb].time+'</div>'
+      +'</div>'
+      +'<div class="hour-score-bar">'
+      +'<div class="h-bar-wrap"><div class="h-bar-fill" style="width:'+h.score.total+'%"></div></div>'
+      +'</div>'
+      +'<div style="display:flex;flex-direction:column;align-items:flex-end;gap:.2rem;">'
+      +'<div class="hour-score-num '+gradeClass(h.score.total,100)+'">'+h.score.total+'<span>/100</span></div>'
+      +pct
+      +'</div>'
+      +'</div>'
+      +'<button class="hour-expand-btn" data-day="'+dayOffset+'" data-hb="'+h.hb+'"><span class="arrow">▼</span> 사주 상세 & 풀이</button>'
+      +'<div class="hour-detail-panel" id="hpanel-'+dayOffset+'-'+h.hb+'">'
+      +buildPillarTable(h.saju)
+      +buildWuxingBar(h.saju)
+      +buildBadges(h.score.baby.guirenFound,h.score.baby.kongmangVoids)
+      +buildScoreBreakdown(h.score)
+      +'<button class="interp-toggle-btn" data-target="'+interpId+'">📖 상세 사주 풀이 보기 ▼</button>'
+      +'<div class="interp-container" id="'+interpId+'" style="display:none;">'
+      +buildInterpretation(h.saju,h.score)
+      +'</div>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+
+  hl.querySelectorAll('.hour-expand-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const {day,hb}=btn.dataset;
+      const panel=document.getElementById('hpanel-'+day+'-'+hb);
+      const open=panel.classList.contains('open');
+      panel.classList.toggle('open',!open);
+      btn.classList.toggle('open',!open);
+    });
+  });
+
+  hl.querySelectorAll('.interp-toggle-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const target=document.getElementById(btn.dataset.target);
+      const open=target.style.display!=='none';
+      target.style.display=open?'none':'block';
+      btn.textContent=open?'📖 상세 사주 풀이 보기 ▼':'📖 상세 사주 풀이 닫기 ▲';
+    });
+  });
+
+  showStep('detail');
+}
+
+// ════════════════════════════════════════════════
+// 10. 스텝 전환 & 초기화
+// ════════════════════════════════════════════════
+
+function showStep(name){
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('step-'+name).classList.add('active');
+  window.scrollTo(0,0);
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const today=new Date(),later=new Date(today.getTime()+14*86400000);
+  document.getElementById('dueDate').value=later.toISOString().slice(0,10);
+
+  document.getElementById('saju-form').addEventListener('submit',e=>{
+    e.preventDefault();
+    const errEl=document.getElementById('form-error');
+    errEl.style.display='none';
+    const dueDate=document.getElementById('dueDate').value;
+    const fDob=document.getElementById('fatherDob').value;
+    const mDob=document.getElementById('motherDob').value;
+    const fhv=document.getElementById('fatherHour').value;
+    const mhv=document.getElementById('motherHour').value;
+    if(!dueDate||!fDob||!mDob){
+      errEl.textContent='출산예정일, 아버지/어머니 생년월일은 필수입력 항목입니다.';
+      errEl.style.display='block';
+      return;
+    }
+    const fHour=fhv!==''?Number(fhv):null;
+    const mHour=mhv!==''?Number(mhv):null;
+    showStep('loading');
+    setTimeout(()=>{
+      const {results}=runAnalysis(dueDate,fDob,fHour,mDob,mHour);
+      _results=results;
+      _sortMode='total';
+      const due=parseDate(dueDate),start=addDays(due.y,due.m,due.d,-13);
+      document.getElementById('analysisRange').textContent=fmt(start.y,start.m,start.d)+' ~ '+fmt(due.y,due.m,due.d);
+      document.querySelectorAll('.sort-btn').forEach(b=>b.classList.toggle('active',b.dataset.sort==='total'));
+      const s=sorted();
+      renderTopList(s);
+      renderFullList(s);
+      showStep('result');
+    },400);
+  });
+
+  document.addEventListener('click',e=>{
+    if(e.target.classList.contains('sort-btn')){
+      _sortMode=e.target.dataset.sort;
+      document.querySelectorAll('.sort-btn').forEach(b=>b.classList.toggle('active',b.dataset.sort===_sortMode));
+      const s=sorted();renderTopList(s);renderFullList(s);
+    }
+  });
+
+  document.getElementById('back-to-input').addEventListener('click',()=>showStep('input'));
+  document.getElementById('back-to-result').addEventListener('click',()=>showStep('result'));
+});
