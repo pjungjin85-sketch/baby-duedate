@@ -488,17 +488,29 @@ input, select { outline: none; }
 .hour-score-num span { font-size: .62rem; color: var(--text3); }
 
 .hour-expand-btn {
-  font-size: .72rem;
-  color: var(--text3);
-  padding: 0 .95rem .55rem;
   display: flex;
   align-items: center;
-  gap: .3rem;
+  justify-content: center;
+  gap: .4rem;
+  width: calc(100% - 1.9rem);
+  margin: .1rem .95rem .75rem;
+  padding: .6rem .8rem;
+  background: var(--red);
+  border: none;
+  border-radius: 8px;
+  color: #fff;
   font-family: 'Noto Sans KR', sans-serif;
+  font-size: .8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, transform .1s;
+  letter-spacing: .02em;
 }
-.hour-expand-btn .arrow { transition: transform .2s; }
+.hour-expand-btn:hover { background: var(--red2); transform: translateY(-1px); }
+.hour-expand-btn.open { background: var(--text2, #555); }
+.hour-expand-btn.open:hover { background: var(--text, #222); }
+.hour-expand-btn .arrow { transition: transform .2s; font-size: .75rem; }
 .hour-expand-btn.open .arrow { transform: rotate(180deg); }
-.hour-expand-btn:hover { color: var(--red); }
 
 .hour-detail-panel { display: none; padding: 0 .95rem .85rem; }
 .hour-detail-panel.open { display: block; }
@@ -604,7 +616,7 @@ input, select { outline: none; }
   .hour-name { font-size: .82rem; }
   .hour-time { font-size: .66rem; }
   .hour-score-num { font-size: .88rem; min-width: 30px; }
-  .hour-expand-btn { padding: 0 .75rem .5rem; font-size: .69rem; }
+  .hour-expand-btn { width: calc(100% - 1.5rem); margin: .1rem .75rem .65rem; padding: .55rem .7rem; font-size: .76rem; }
   .hour-detail-panel { padding: 0 .75rem .7rem; }
 
   /* 상세 페이지 헤더 */
@@ -707,18 +719,20 @@ input, select { outline: none; }
 .interp-toggle-btn {
   width: 100%;
   margin-top: .85rem;
-  padding: .52rem;
-  background: #fff5f5;
-  border: 1px solid var(--red-pale);
+  padding: .65rem;
+  background: #fff;
+  border: 2px solid var(--red);
   border-radius: 8px;
   color: var(--red);
   font-family: 'Noto Sans KR', sans-serif;
-  font-size: .8rem;
-  font-weight: 600;
+  font-size: .85rem;
+  font-weight: 700;
   text-align: center;
-  transition: background .15s;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  letter-spacing: .02em;
 }
-.interp-toggle-btn:hover { background: var(--red-pale); }
+.interp-toggle-btn:hover { background: var(--red); color: #fff; }
 
 .interp-container { margin-top: .45rem; }
 .interp-wrap { display: flex; flex-direction: column; gap: .6rem; }

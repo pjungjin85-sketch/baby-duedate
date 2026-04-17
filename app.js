@@ -803,7 +803,7 @@ function showDetail(dayOffset){
       +pct
       +'</div>'
       +'</div>'
-      +'<button class="hour-expand-btn" data-day="'+dayOffset+'" data-hb="'+h.hb+'"><span class="arrow">▼</span> 사주 상세 & 풀이</button>'
+      +'<button class="hour-expand-btn" data-day="'+dayOffset+'" data-hb="'+h.hb+'">📊 사주 상세 & 풀이 보기 <span class="arrow">▼</span></button>'
       +'<div class="hour-detail-panel" id="hpanel-'+dayOffset+'-'+h.hb+'">'
       +buildPillarTable(h.saju)
       +buildWuxingBar(h.saju)
