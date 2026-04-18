@@ -434,6 +434,7 @@ function sajuFull(s){return [s.year,s.month,s.day,s.hour].map(pillarTxt).join(' 
 // ════════════════════════════════════════════════
 
 let _allScores=[];
+let _globalScores=[];
 
 function runAnalysis(dueDateStr,fDobStr,fHour,mDobStr,mHour){
   const due=parseDate(dueDateStr),fd=parseDate(fDobStr),md=parseDate(mDobStr);
@@ -450,8 +451,20 @@ function runAnalysis(dueDateStr,fDobStr,fHour,mDobStr,mHour){
     hrs.sort((a,b)=>b.score.total-a.score.total);
     results.push({y,m,d,dayOffset:i,hourResults:hrs});
   }
-  // 전체 168개 점수 수집
+  // 기간 내 168개 점수
   _allScores=results.flatMap(r=>r.hourResults.map(h=>h.score.total)).sort((a,b)=>a-b);
+
+  // 연간 기준: 예정일 중심 ±182일 = 365일 × 12시간 = 4,380개
+  const globalArr=[];
+  for(let i=-182;i<183;i++){
+    const {y,m,d}=addDays(due.y,due.m,due.d,i);
+    for(let hb=0;hb<12;hb++){
+      const saju=calcSaju(y,m,d,hb);
+      globalArr.push(calcScore(saju,fSaju,mSaju).total);
+    }
+  }
+  _globalScores=globalArr.sort((a,b)=>a-b);
+
   results.forEach(r=>r.bestScore=r.hourResults[0].score);
   results.sort((a,b)=>b.bestScore.total-a.bestScore.total);
   return{results,fSaju,mSaju};
@@ -469,13 +482,17 @@ function gradeClass(v,max){
   return 'grade-c';
 }
 
+function pctClass(pct){
+  if(pct<=5)  return 'pct-top';
+  if(pct<=15) return 'pct-high';
+  if(pct<=35) return 'pct-mid';
+  return 'pct-low';
+}
 function buildPercentileBadge(score){
-  const pct=calcPercentile(score,_allScores);
-  let cls='pct-low';
-  if(pct<=5)  cls='pct-top';
-  else if(pct<=15) cls='pct-high';
-  else if(pct<=35) cls='pct-mid';
-  return '<span class="pct-badge '+cls+'">상위 '+pct+'%</span>';
+  const lp=calcPercentile(score,_allScores);
+  const gp=calcPercentile(score,_globalScores);
+  return '<span class="pct-badge '+pctClass(lp)+'" title="조회 2주 기간 내 순위">2주 내 상위 '+lp+'%</span>'
+        +'<span class="pct-badge '+pctClass(gp)+' pct-global" title="연간(±6개월) 전체 기준 순위">연간 상위 '+gp+'%</span>';
 }
 
 function buildPillarTable(saju){

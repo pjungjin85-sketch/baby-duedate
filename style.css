@@ -755,7 +755,7 @@ input, select { outline: none; }
 /* ── 20. 상위 퍼센트 뱃지 ────────────────────────── */
 .pct-badge {
   display: inline-block;
-  font-size: .67rem;
+  font-size: .66rem;
   font-weight: 700;
   padding: .16rem .48rem;
   border-radius: 10px;
@@ -767,8 +767,16 @@ input, select { outline: none; }
 .pct-mid  { background: #e8f5e9; border: 1px solid #a5d6a7; color: var(--wood); }
 .pct-low  { background: var(--bg3); border: 1px solid var(--border); color: var(--text3); }
 
-.top-card .pct-badge { margin-top: .28rem; }
-.day-score-col .pct-badge { margin-top: .08rem; }
+/* 두 뱃지 묶음 */
+.top-card .pct-badge { display: block; margin-top: .18rem; text-align: center; }
+.top-card .pct-badge + .pct-badge { margin-top: .1rem; }
+.day-score-col .pct-badge { display: block; margin-top: .06rem; }
+.day-score-col .pct-badge + .pct-badge { margin-top: .04rem; }
+.pct-global { opacity: .82; }
+
+/* 시간대 상세 뱃지 */
+.hour-score-wrap .pct-badge { display: inline-block; margin-left: .2rem; vertical-align: middle; }
+.hour-score-wrap .pct-badge + .pct-badge { margin-left: .18rem; }
 
 /* ── 21. 상세 풀이 ───────────────────────────────── */
 .interp-toggle-btn {
