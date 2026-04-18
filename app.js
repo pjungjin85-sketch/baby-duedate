@@ -60,6 +60,77 @@ const WEEKDAYS = ['일','월','화','수','목','금','토'];
 // 2. 사주 풀이 데이터
 // ════════════════════════════════════════════════
 
+// 사주 한마디 시적 문장 [일간0~9 × 신강(s)/신중(m)/신약(w)]
+const SAJU_POEM = {
+  // 甲木 — 큰 나무
+  0:{s:'폭풍을 정면으로 받아내며 더 단단히 뿌리 내리는 산의 소나무',
+     m:'사계절을 묵묵히 견뎌온 고요한 참나무',
+     w:'척박한 돌 틈에서 하늘을 향해 뻗는 어린 나무'},
+  // 乙木 — 넝쿨·풀
+  1:{s:'비바람에도 굴하지 않고 끝까지 뻗어가는 강인한 담쟁이',
+     m:'바위를 조용히 감싸는 봄날의 넝쿨',
+     w:'이슬을 머금고 처음 피어오른 여린 새싹'},
+  // 丙火 — 태양
+  2:{s:'구름도 가리지 못하는 정오의 뜨거운 태양',
+     m:'산 너머로 퍼지는 따뜻한 아침 햇살',
+     w:'안개 속에서 빛을 내려는 새벽의 해'},
+  // 丁火 — 촛불·별
+  3:{s:'거센 바람 속에서도 꺼지지 않는 작은 불꽃',
+     m:'조용한 밤을 홀로 밝히는 촛불',
+     w:'빗속에서 가늘게 떨리는 별빛'},
+  // 戊土 — 큰 산
+  4:{s:'세월이 쌓여 위엄을 갖춘 웅장한 산',
+     m:'봄여름가을겨울을 포근히 품는 큰 산',
+     w:'조용히 자리를 지키는 이름 없는 언덕'},
+  // 己土 — 논밭·대지
+  5:{s:'풍성하게 만물을 키워내는 비옥한 대지',
+     m:'씨앗마다 생명을 품는 따뜻한 논밭',
+     w:'아직 개간을 기다리는 가능성의 황무지'},
+  // 庚金 — 강철
+  6:{s:'용광로에서 단련되어 예리하게 빛나는 강철',
+     m:'오랜 담금질로 완성된 단단한 쇳덩이',
+     w:'거친 광산 속에서 빛을 기다리는 원석'},
+  // 辛金 — 보석
+  7:{s:'빛을 받아 찬란하게 빛나는 다이아몬드',
+     m:'조용한 빛을 은은하게 발하는 진주',
+     w:'아직 연마를 기다리는 가능성의 원석'},
+  // 壬水 — 큰 강·바다
+  8:{s:'모든 것을 받아들이며 거침없이 흐르는 대하',
+     m:'지혜롭게 굽이치는 넓고 깊은 강',
+     w:'안개 낀 새벽 호수에서 방향을 찾는 물'},
+  // 癸水 — 비·이슬
+  9:{s:'대지를 적시고 만물을 소생시키는 봄비',
+     m:'새벽 이슬처럼 맑고 투명한 영혼',
+     w:'안개처럼 은은하게 스며드는 섬세한 감성'},
+};
+
+// 오행 과다 시 시적 수식어 (가장 강한 오행이 전체 40% 이상일 때)
+const POEM_MOD = [
+  '푸른 숲의 기운을 타고난',    // 木 과다
+  '뜨거운 열정이 넘치는',       // 火 과다
+  '대지처럼 든든하고 깊은',     // 土 과다
+  '차갑게 빛나는 서리를 품은',  // 金 과다
+  '깊은 물의 지혜를 품은',      // 水 과다
+];
+
+function buildSajuPoem(saju){
+  const strength=getDayStrengthLabel(saju); // 0=강,1=중,2=약
+  const key=['s','m','w'][strength];
+  const base=SAJU_POEM[saju.day.stem][key];
+
+  // 압도적 오행(40% 이상)이 있으면 앞에 수식어 붙임
+  const dist=getElementDist(saju);
+  const total=dist.reduce((a,b)=>a+b,0);
+  const maxIdx=dist.indexOf(Math.max(...dist));
+  const mod=(dist[maxIdx]/total>=0.4) ? POEM_MOD[maxIdx]+' ' : '';
+
+  const phrase=mod+base;
+  return '<div class="saju-poem">'
+    +'<div class="poem-label">✨ 이 사주를 한마디로</div>'
+    +'<div class="poem-text">&ldquo;'+phrase+'&rdquo;</div>'
+    +'</div>';
+}
+
 const DAYMASTER_INFO = [
   { hanja:'甲', kr:'갑목', wx:'木', icon:'🌲', title:'큰 나무 — 곧고 강한 개척자',
     core:'자기 주관이 뚜렷하고 추진력이 강한 리더형입니다.',
@@ -360,12 +431,13 @@ function getElementDist(saju){
 function scoreWuxingBalance(saju){
   const dist=getElementDist(saju);
   const present=dist.filter(v=>v>0).length;
-  const presenceScore=present*2;
+  const presenceScore=present*2; // 최대 10점
   const total=dist.reduce((a,b)=>a+b,0);
   const mean=total/5;
-  const maxDev=Math.sqrt(dist.reduce((s,_,i)=>s+(i<present?mean**2:(total-0)**2),0)/5)||1;
   const variance=dist.reduce((s,v)=>s+(v-mean)**2,0)/5;
-  const balanceScore=10*Math.max(0,1-Math.sqrt(variance)/Math.max(mean,1));
+  // 최대 분산: 전량 한 원소에 집중 시 variance_max = 4*mean²
+  // balanceScore: 완전균형→10, 최대편중→0
+  const balanceScore=10*Math.max(0,1-Math.sqrt(variance)/(2*Math.max(mean,0.001)));
   return Math.min(20,Math.round(presenceScore+balanceScore));
 }
 // ── 신강/신약 공통 계산 (월령 가중치 + 일지 반영) ──
@@ -409,8 +481,7 @@ function scoreGuiren(saju){
   const br=[saju.year.branch,saju.month.branch,saju.day.branch,saju.hour.branch];
   let score=0;
   const found={tianyi:false,wenchang:false,fuxing:false};
-  const ty=TIANYI[saju.day.stem]||[];
-  if(br.some(b=>ty.includes(b))){score+=5;found.tianyi=true;}
+  if(br.some(b=>(TIANYI[saju.day.stem]||[]).includes(b))){score+=5;found.tianyi=true;}
   if(br.includes(WENCHANG[saju.day.stem])){score+=5;found.wenchang=true;}
   if(br.includes(FUXING[saju.year.branch])){score+=5;found.fuxing=true;}
   return{score:Math.min(15,score),found};
@@ -1066,6 +1137,7 @@ function showDetail(dayOffset){
     +'<span style="font-size:.82rem;color:var(--text3);">총점 '+best.score.total+'점</span>'
     +buildPercentileBadge(best.score.total)
     +'</div>'
+    +buildSajuPoem(best.saju)
     +buildPillarTable(best.saju)+buildWuxingBar(best.saju)+buildBadges(best.score.baby.guirenFound,best.score.baby.kongmangVoids);
 
   const hl=document.getElementById('detail-hour-list');
@@ -1089,6 +1161,7 @@ function showDetail(dayOffset){
       +'</div>'
       +'<button class="hour-expand-btn" data-day="'+dayOffset+'" data-hb="'+h.hb+'">📊 사주 상세 & 풀이 보기 <span class="arrow">▼</span></button>'
       +'<div class="hour-detail-panel" id="hpanel-'+dayOffset+'-'+h.hb+'">'
+      +buildSajuPoem(h.saju)
       +buildPillarTable(h.saju)
       +buildWuxingBar(h.saju)
       +buildBadges(h.score.baby.guirenFound,h.score.baby.kongmangVoids)

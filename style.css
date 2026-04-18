@@ -566,6 +566,31 @@ input, select { outline: none; }
 .hour-detail-panel { display: none; padding: 0 .95rem .85rem; }
 .hour-detail-panel.open { display: block; }
 
+/* ── 사주 한마디 ─────────────────────────────────────── */
+.saju-poem {
+  margin: .9rem 0 .7rem;
+  padding: .85rem 1.1rem;
+  background: linear-gradient(135deg, #fff8f0 0%, #fff3e0 100%);
+  border-left: 4px solid #ff6d00;
+  border-radius: 0 10px 10px 0;
+  box-shadow: 0 2px 8px rgba(255,109,0,.1);
+}
+.poem-label {
+  font-size: .72rem;
+  font-weight: 700;
+  color: #ff6d00;
+  letter-spacing: .06em;
+  margin-bottom: .35rem;
+}
+.poem-text {
+  font-family: 'Noto Serif KR', serif;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #3e2723;
+  line-height: 1.6;
+  word-break: keep-all;
+}
+
 /* ── 17. 반응형 ──────────────────────────────────── */
 
 /* 태블릿 (768px) */
