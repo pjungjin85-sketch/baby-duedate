@@ -28,6 +28,18 @@ const HOURS = [
 
 const IPCHUN = {2023:[2,4],2024:[2,4],2025:[2,3],2026:[2,4],2027:[2,4],2028:[2,4]};
 
+// ── 절기 날짜 수식 계산 (하드코딩 범위 밖 연도용, ±1일 정확도) ──
+// 20세기/21세기 각각 보정 상수 (출처: 중국 천문학 연구원 근사식)
+const _ST_C21 = [5.4055,3.8971,5.6280,4.8827,5.5220,5.6700,7.1498,7.3941,7.6413,8.1024,7.3921,6.9999];
+const _ST_C19 = [6.3811,4.8360,6.3780,5.8922,6.3780,6.4649,7.9218,8.2278,8.4399,9.2083,8.2079,7.7983];
+// termIdx: 0=소한(Jan),1=입춘(Feb),2=경칩(Mar),3=청명(Apr),4=입하(May),5=망종(Jun),
+//          6=소서(Jul),7=입추(Aug),8=백로(Sep),9=한로(Oct),10=입동(Nov),11=대설(Dec)
+function getSolarTermDateCalc(year, termIdx){
+  const C = year>=2000 ? _ST_C21 : _ST_C19;
+  const Y = year>=2000 ? year-2000 : year-1900;
+  return Math.floor(Y*0.2422 + C[termIdx]) - Math.floor((Y-1)/4);
+}
+
 const SOLAR_TERMS = {
   2024:[[1,6,1],[2,4,2],[3,5,3],[4,4,4],[5,5,5],[6,5,6],[7,6,7],[8,7,8],[9,7,9],[10,8,10],[11,7,11],[12,7,0]],
   2025:[[1,5,1],[2,3,2],[3,5,3],[4,4,4],[5,5,5],[6,5,6],[7,7,7],[8,7,8],[9,7,9],[10,8,10],[11,7,11],[12,7,0]],
@@ -253,17 +265,29 @@ function julianDay(y,m,d){
   return d+Math.floor((153*mm+2)/5)+365*yy+Math.floor(yy/4)-Math.floor(yy/100)+Math.floor(yy/400)-32045;
 }
 function getSajuYear(y,m,d){
-  const ip=IPCHUN[y]||[2,4];
+  // 하드코딩 범위 밖이면 수식으로 입춘 날짜 계산
+  const ip = IPCHUN[y] || [2, getSolarTermDateCalc(y, 1)];
   return (m<ip[0]||(m===ip[0]&&d<ip[1]))?y-1:y;
 }
 function getYearPillar(y,m,d){
   const sy=getSajuYear(y,m,d),idx=((sy-4)%60+60)%60;
   return {stem:idx%10,branch:idx%12,idx};
 }
+// 절기별 월지 (소한=丑1, 입춘=寅2, ... 대설=子0)
+const _TERM_MONTH  = [1,2,3,4,5,6,7,8,9,10,11,12];
+const _TERM_BRANCH = [1,2,3,4,5,6,7,8,9,10,11,0];
 function getMonthBranch(y,m,d){
-  const terms=SOLAR_TERMS[y]||SOLAR_TERMS[2026];
+  if(SOLAR_TERMS[y]){
+    let branch=1;
+    for(const [tm,td,tb] of SOLAR_TERMS[y]) if(m>tm||(m===tm&&d>=td)) branch=tb;
+    return branch;
+  }
+  // 하드코딩 범위 밖: 수식으로 각 절기 날짜 계산
   let branch=1;
-  for(const [tm,td,tb] of terms) if(m>tm||(m===tm&&d>=td)) branch=tb;
+  for(let i=0;i<12;i++){
+    const td=getSolarTermDateCalc(y,i);
+    if(m>_TERM_MONTH[i]||(m===_TERM_MONTH[i]&&d>=td)) branch=_TERM_BRANCH[i];
+  }
   return branch;
 }
 function getMonthPillar(y,m,d){
@@ -292,12 +316,36 @@ function parseDate(s){const[y,m,d]=s.split('-').map(Number);return{y,m,d};}
 
 function wxGen(a,b){return(a+1)%5===b;}
 function wxCtrl(a,b){return(a+2)%5===b;}
+
+// 지장간(地藏干): 각 지지(地支) 안에 숨겨진 천간의 오행
+// [주기(主氣×3), 중기(中氣×1.5), 여기(餘氣×0.5)] — 없으면 주기만
+// WX 인덱스: 목0 화1 토2 금3 수4
+const DZ_JZG = [
+  [4],        // 子(자): 壬水
+  [2,4,3],    // 丑(축): 己土·癸水·辛金
+  [0,1,2],    // 寅(인): 甲木·丙火·戊土
+  [0,0],      // 卯(묘): 乙木·甲木
+  [2,0,4],    // 辰(진): 戊土·乙木·癸水
+  [1,3,2],    // 巳(사): 丙火·庚金·戊土
+  [1,2],      // 午(오): 丁火·己土
+  [2,1,0],    // 未(미): 己土·丁火·乙木
+  [3,4,2],    // 申(신): 庚金·壬水·戊土
+  [3,3],      // 酉(유): 庚金·辛金
+  [2,3,1],    // 戌(술): 戊土·辛金·丁火
+  [4,0],      // 亥(해): 壬水·甲木
+];
+// 지장간 가중치: 주기=3, 중기=1.5, 여기=0.5 (10배 정수 처리 → 30,15,5)
+const DZ_JZG_W = [30,15,5];
+
 function getElementDist(saju){
+  // 천간(×10) + 지장간 가중치 합산 후 /10 반올림 → 소수점 1자리
   const dist=[0,0,0,0,0];
   for(const p of [saju.year,saju.month,saju.day,saju.hour]){
-    dist[TG_WX[p.stem]]++;dist[DZ_WX[p.branch]]++;
+    dist[TG_WX[p.stem]]+=10; // 천간: 기본 1.0 (×10)
+    const jzg=DZ_JZG[p.branch];
+    for(let i=0;i<jzg.length;i++) dist[jzg[i]]+=DZ_JZG_W[i]||5;
   }
-  return dist;
+  return dist.map(v=>Math.round(v)/10);
 }
 
 // ════════════════════════════════════════════════
@@ -308,51 +356,49 @@ function scoreWuxingBalance(saju){
   const dist=getElementDist(saju);
   const present=dist.filter(v=>v>0).length;
   const presenceScore=present*2;
-  const mean=8/5,variance=dist.reduce((s,v)=>s+(v-mean)**2,0)/5;
-  const balanceScore=10*Math.max(0,1-Math.sqrt(variance)/Math.sqrt(8));
-  return Math.round(presenceScore+balanceScore);
+  const total=dist.reduce((a,b)=>a+b,0);
+  const mean=total/5;
+  const maxDev=Math.sqrt(dist.reduce((s,_,i)=>s+(i<present?mean**2:(total-0)**2),0)/5)||1;
+  const variance=dist.reduce((s,v)=>s+(v-mean)**2,0)/5;
+  const balanceScore=10*Math.max(0,1-Math.sqrt(variance)/Math.max(mean,1));
+  return Math.min(20,Math.round(presenceScore+balanceScore));
+}
+// ── 신강/신약 공통 계산 (월령 가중치 + 일지 반영) ──
+// 전통 사주: 월지(月支)가 최우선, 일지가 그 다음, 나머지는 기본 가중치
+// weight: 연간1/연지1 / 월간1/월지3 / 일지2 / 시간1/시지1
+function calcDayStrengthRatio(saju){
+  const dayEl=TG_WX[saju.day.stem];
+  let sup=0,opp=0;
+  function add(el,w){
+    if(el===dayEl)          sup+=2*w;
+    else if(wxGen(el,dayEl)) sup+=1*w;   // 생(生): 나를 도움
+    else if(wxCtrl(el,dayEl)) opp+=2*w;  // 극(剋): 나를 억제
+    else if(wxGen(dayEl,el)) opp+=0.5*w; // 내가 생: 힘 소모
+    else                     opp+=0.5*w;
+  }
+  add(TG_WX[saju.year.stem],  1);
+  add(DZ_WX[saju.year.branch],1);
+  add(TG_WX[saju.month.stem], 1);
+  add(DZ_WX[saju.month.branch],3); // 월지: 3배 (월령 핵심)
+  add(DZ_WX[saju.day.branch], 2);  // 일지: 2배
+  add(TG_WX[saju.hour.stem],  1);
+  add(DZ_WX[saju.hour.branch],1);
+  const total=sup+opp;
+  return total===0 ? 0.5 : sup/total;
 }
 function scoreDayStrength(saju){
-  const dayEl=TG_WX[saju.day.stem];
-  let support=0,oppose=0;
-  for(const p of [saju.year,saju.month,saju.hour]){
-    for(const el of [TG_WX[p.stem],DZ_WX[p.branch]]){
-      if(el===dayEl) support+=2;
-      else if(wxGen(el,dayEl)) support+=1;
-      else if(wxCtrl(el,dayEl)) oppose+=2;
-      else if(wxGen(dayEl,el)) oppose+=0.5;
-    }
-  }
-  const monthEl=DZ_WX[saju.month.branch];
-  if(monthEl===dayEl) support+=3;
-  else if(wxGen(monthEl,dayEl)) support+=2;
-  const total=support+oppose;
-  if(total===0) return 10;
-  const dist=Math.abs(support/total-0.5);
-  if(dist<=0.15) return 15;
-  if(dist<=0.25) return 11;
-  if(dist<=0.35) return 7;
+  const r=calcDayStrengthRatio(saju);
+  const d=Math.abs(r-0.5);
+  if(d<=0.08) return 15; // 신중: 거의 완벽 균형
+  if(d<=0.18) return 11;
+  if(d<=0.30) return 7;
   return 4;
 }
 function getDayStrengthLabel(saju){
-  const dayEl=TG_WX[saju.day.stem];
-  let support=0,oppose=0;
-  for(const p of [saju.year,saju.month,saju.hour]){
-    for(const el of [TG_WX[p.stem],DZ_WX[p.branch]]){
-      if(el===dayEl) support+=2;
-      else if(wxGen(el,dayEl)) support+=1;
-      else if(wxCtrl(el,dayEl)) oppose+=2;
-      else if(wxGen(dayEl,el)) oppose+=0.5;
-    }
-  }
-  const monthEl=DZ_WX[saju.month.branch];
-  if(monthEl===dayEl) support+=3; else if(wxGen(monthEl,dayEl)) support+=2;
-  const total=support+oppose;
-  if(total===0) return 1;
-  const ratio=support/total;
-  if(ratio>=0.6) return 0; // 신강
-  if(ratio>=0.4) return 1; // 신중
-  return 2; // 신약
+  const r=calcDayStrengthRatio(saju);
+  if(r>=0.58) return 0; // 신강
+  if(r>=0.42) return 1; // 신중
+  return 2;              // 신약
 }
 function scoreGuiren(saju){
   const br=[saju.year.branch,saju.month.branch,saju.day.branch,saju.hour.branch];
@@ -536,18 +582,20 @@ function buildWuxingBar(saju){
   const WX_NAMES=['나무 기운','불 기운','흙 기운','쇠 기운','물 기운'];
   const WX_ICON=['🌿','🔥','🌍','⚙','💧'];
 
-  // ① 오행 강도 바
+  // ① 오행 강도 바 (지장간 포함 최대값 동적 계산)
+  const distMax=Math.max(...dist,1);
   let html='<div class="wx-section">';
   html+='<div class="wx-bars">';
   for(let i=0;i<5;i++){
-    const pct=Math.round(dist[i]/8*100);
+    const pct=Math.round(dist[i]/distMax*100);
     const isEmpty=dist[i]===0;
+    const dispVal=Number.isInteger(dist[i])?dist[i]:dist[i].toFixed(1);
     html+='<div class="wx-bar-item'+(isEmpty?' wx-empty':'')+'">'
       +'<div class="wx-bar-label" style="color:'+(isEmpty?'#bbb':WX_COLOR[i])+'">'+WX_HANJA[i]+'<span>'+WX[i]+'</span></div>'
       +'<div class="wx-bar-track">'
         +'<div class="wx-bar-fill" style="width:'+Math.max(pct,isEmpty?0:5)+'%;background:'+(isEmpty?'#e0e0e0':WX_BG_YANG[i])+'"></div>'
       +'</div>'
-      +'<div class="wx-bar-count" style="color:'+(isEmpty?'#bbb':WX_COLOR[i])+'">'+dist[i]+'<span>/8</span></div>'
+      +'<div class="wx-bar-count" style="color:'+(isEmpty?'#bbb':WX_COLOR[i])+'">'+dispVal+'</div>'
       +'</div>';
   }
   html+='</div>';
