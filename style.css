@@ -679,6 +679,11 @@ input, select { outline: none; }
   /* 버튼 */
   .btn-back { font-size: .76rem; padding: .32rem .6rem; }
   .interp-toggle-btn { font-size: .76rem; padding: .48rem; margin-top: .75rem; }
+  .fortune-grid { gap: .35rem; }
+  .fortune-card { padding: .45rem .5rem .4rem; border-radius: 8px; }
+  .fc-name { font-size: .67rem; }
+  .fc-score { font-size: .82rem; }
+  .fc-desc { font-size: .64rem; }
   .btn-analyze { font-size: .96rem; padding: .88rem; }
 
   /* 풀이 섹션 */
@@ -778,7 +783,35 @@ input, select { outline: none; }
 .hour-score-wrap .pct-badge { display: inline-block; margin-left: .2rem; vertical-align: middle; }
 .hour-score-wrap .pct-badge + .pct-badge { margin-left: .18rem; }
 
-/* ── 21. 상세 풀이 ───────────────────────────────── */
+/* ── 21. 운세 항목 그리드 ──────────────────────────── */
+.fortune-section { margin: .75rem 0 .6rem; }
+.fortune-title { font-size: .82rem; font-weight: 700; color: var(--text); margin-bottom: .55rem; }
+.fortune-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .45rem;
+}
+.fortune-card {
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: .55rem .65rem .5rem;
+}
+.fc-head { display: flex; align-items: center; gap: .3rem; margin-bottom: .28rem; }
+.fc-icon { font-size: .95rem; line-height: 1; }
+.fc-name { font-size: .72rem; font-weight: 700; color: var(--text); flex: 1; }
+.fc-score { font-size: .88rem; font-weight: 700; }
+.fortune-score-hi  { color: #E53935; }
+.fortune-score-mid { color: #1976D2; }
+.fortune-score-lo  { color: #9E9E9E; }
+.fc-bar-track { background: #ebebeb; border-radius: 6px; height: 5px; margin-bottom: .3rem; overflow: hidden; }
+.fc-bar-fill { height: 100%; border-radius: 6px; transition: width .4s ease; }
+.fortune-fill-hi  { background: #E53935; }
+.fortune-fill-mid { background: #1976D2; }
+.fortune-fill-lo  { background: #BDBDBD; }
+.fc-desc { font-size: .68rem; color: var(--text2); line-height: 1.5; }
+
+/* ── 22. 상세 풀이 ───────────────────────────────── */
 .interp-toggle-btn {
   width: 100%;
   margin-top: .85rem;

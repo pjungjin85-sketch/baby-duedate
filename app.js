@@ -337,6 +337,11 @@ const DZ_JZG = [
 // 지장간 가중치: 주기=3, 중기=1.5, 여기=0.5 (10배 정수 처리 → 30,15,5)
 const DZ_JZG_W = [30,15,5];
 
+// 지장간 주기(主氣) 천간 인덱스 — 십신 계산용
+// 子→壬(8) 丑→己(5) 寅→甲(0) 卯→乙(1) 辰→戊(4) 巳→丙(2)
+// 午→丁(3) 未→己(5) 申→庚(6) 酉→辛(7) 戌→戊(4) 亥→壬(8)
+const DZ_MAIN_STEM=[8,5,0,1,4,2,3,5,6,7,4,8];
+
 function getElementDist(saju){
   // 천간(×10) + 지장간 가중치 합산 후 /10 반올림 → 소수점 1자리
   const dist=[0,0,0,0,0];
@@ -421,6 +426,84 @@ function scoreKongmang(saju){
   if(dv) return{score:4,type:'day',voids:[v1,v2]};
   return{score:7,type:'hour',voids:[v1,v2]};
 }
+// ── 십신(十神) ────────────────────────────────────────
+// 일간(ds) 기준 상대 천간(os)의 관계 인덱스 반환
+// 0비견 1겁재 2식신 3상관 4편재 5정재 6편관 7정관 8편인 9정인
+function getSipsin(ds,os){
+  const de=TG_WX[ds],oe=TG_WX[os],sp=(ds%2)===(os%2);
+  if(oe===de)          return sp?0:1;
+  if(wxGen(de,oe))     return sp?2:3;
+  if(wxCtrl(de,oe))    return sp?4:5;
+  if(wxCtrl(oe,de))    return sp?6:7;
+  if(wxGen(oe,de))     return sp?8:9;
+  return -1;
+}
+// 4주 7위치(일간 제외)의 십신 카운트
+function getSipsinCounts(saju){
+  const cnt=new Array(10).fill(0);
+  for(const p of [saju.year,saju.month,saju.hour]){
+    const a=getSipsin(saju.day.stem,p.stem);
+    const b=getSipsin(saju.day.stem,DZ_MAIN_STEM[p.branch]);
+    if(a>=0)cnt[a]++; if(b>=0)cnt[b]++;
+  }
+  const c=getSipsin(saju.day.stem,DZ_MAIN_STEM[saju.day.branch]);
+  if(c>=0)cnt[c]++;
+  return cnt; // [비견,겁재,식신,상관,편재,정재,편관,정관,편인,정인]
+}
+// 8개 운세 항목 점수 (0~100)
+function scoreFortuneAspects(saju,score){
+  const ss=getSipsinCounts(saju);
+  const r=calcDayStrengthRatio(saju);
+  const dist=getElementDist(saju);
+  const g=score.baby.guirenFound,km=score.baby.kongmang,wb=score.baby.wuxingBalance;
+  const isStr=r>=0.58,isMid=r>=0.42&&r<0.58,isWk=r<0.42;
+  const C=v=>Math.min(100,Math.max(0,Math.round(v)));
+
+  let wealth=38;
+  wealth+=ss[5]*13+ss[4]*8;
+  if(ss[2]>0&&(ss[4]+ss[5])>0) wealth+=15;
+  if(isStr&&(ss[4]+ss[5])>0) wealth+=10;
+  if(isWk&&(ss[4]+ss[5])>2) wealth-=12;
+
+  let honor=38;
+  honor+=ss[7]*15+ss[6]*8;
+  if((ss[6]+ss[7])>0&&isStr) honor+=10;
+  if((ss[8]+ss[9])>0) honor+=7;
+  if((ss[6]+ss[7])>2&&isWk) honor-=12;
+
+  let people=38;
+  people+=ss[2]*10+ss[3]*6;
+  if(g.tianyi) people+=15;
+  people+=Math.round(wb*0.8);
+
+  let health=45;
+  health+=Math.round(wb*1.5);
+  health+=ss[2]*7;
+  if(km>=10) health+=8; else if(km<=4) health-=10;
+  if(isMid) health+=5;
+
+  let study=38;
+  study+=ss[9]*15+ss[8]*10+ss[2]*6;
+  if(g.wenchang) study+=15;
+
+  let windfall=25;
+  windfall+=ss[4]*15;
+  if(g.fuxing) windfall+=20;
+  if(g.tianyi) windfall+=10;
+  windfall+=Math.round(wb*0.5);
+
+  let lead=38;
+  if(isStr) lead+=15; else if(isWk) lead-=8;
+  lead+=ss[6]*10+ss[7]*8+(ss[0]+ss[1])*4;
+
+  let creative=38;
+  creative+=ss[3]*15+ss[2]*8;
+  creative+=Math.round((dist[1]+dist[0])*2);
+
+  return{wealth:C(wealth),honor:C(honor),people:C(people),health:C(health),
+         study:C(study),windfall:C(windfall),lead:C(lead),creative:C(creative)};
+}
+
 function scoreBaby(saju){
   const wb=scoreWuxingBalance(saju),ds=scoreDayStrength(saju);
   const gr=scoreGuiren(saju),km=scoreKongmang(saju);
@@ -636,6 +719,58 @@ function buildWuxingBar(saju){
     html+='</div>';
   }
   return html+'</div>';
+}
+
+function buildFortuneGrid(saju,score){
+  const f=scoreFortuneAspects(saju,score);
+  const ITEMS=[
+    {icon:'💰',name:'재물운',val:f.wealth,
+     desc:f.wealth>=70?'재성 구조 우수 — 재물 축적력과 관리 능력이 뛰어나요'
+         :f.wealth>=50?'안정적인 재물 흐름 — 꾸준한 수입을 기대할 수 있어요'
+         :'가치·의미 지향 — 재물보다 보람 있는 일에서 빛나는 사주예요'},
+    {icon:'🏆',name:'명예운',val:f.honor,
+     desc:f.honor>=70?'관성 강함 — 사회적 인정과 명예를 자연스럽게 얻어요'
+         :f.honor>=50?'노력이 인정받는 사주 — 꾸준히 하면 빛이 나요'
+         :'명예보다 자유와 독립을 추구하는 개인주의 기질이에요'},
+    {icon:'🤝',name:'인복',val:f.people,
+     desc:f.people>=70?'귀인을 자주 만나고 사람들에게 사랑받는 사주예요'
+         :f.people>=50?'평균 이상의 인복 — 중요한 순간 도움을 받아요'
+         :'소수의 깊은 관계를 선호하는 내면 중심 스타일이에요'},
+    {icon:'💪',name:'건강운',val:f.health,
+     desc:f.health>=70?'오행 균형 우수 — 타고난 건강 체질이에요'
+         :f.health>=50?'규칙적인 생활 습관으로 건강을 유지할 수 있어요'
+         :'건강 관리에 신경 써야 하는 사주 — 예방이 중요해요'},
+    {icon:'📚',name:'학습운',val:f.study,
+     desc:f.study>=70?'인성 강함 — 타고난 학습 능력과 지혜가 뛰어나요'
+         :f.study>=50?'꾸준히 배우면 실력을 발휘하는 사주예요'
+         :'책보다 실전 경험으로 성장하는 현장형 스타일이에요'},
+    {icon:'🍀',name:'당첨운',val:f.windfall,
+     desc:f.windfall>=70?'편재·귀인 강함 — 뜻밖의 행운이 자주 따라와요'
+         :f.windfall>=50?'이따금 행운이 찾아오는 평균적인 횡재운이에요'
+         :'운보다 노력으로 얻는 것이 더 잘 맞는 사주예요'},
+    {icon:'👑',name:'리더십',val:f.lead,
+     desc:f.lead>=70?'신강+관성 구조 — 타고난 리더 기질이 뚜렷해요'
+         :f.lead>=50?'상황에 따라 리더 역할을 잘 수행하는 사주예요'
+         :'조력자·팀플레이어로서 뒤에서 빛나는 스타일이에요'},
+    {icon:'🎨',name:'창의력',val:f.creative,
+     desc:f.creative>=70?'상관·식신 강함 — 창의·예술적 재능이 뛰어나요'
+         :f.creative>=50?'독창적인 아이디어를 잘 내는 사주예요'
+         :'창의보다 분석·실용 능력이 강한 논리형 사주예요'},
+  ];
+  let html='<div class="fortune-section">';
+  html+='<div class="fortune-title">🌟 운세 항목별 점수</div>';
+  html+='<div class="fortune-grid">';
+  for(const it of ITEMS){
+    const lvl=it.val>=70?'hi':it.val>=50?'mid':'lo';
+    html+='<div class="fortune-card fortune-'+lvl+'">'
+      +'<div class="fc-head"><span class="fc-icon">'+it.icon+'</span>'
+      +'<span class="fc-name">'+it.name+'</span>'
+      +'<span class="fc-score fortune-score-'+lvl+'">'+it.val+'</span></div>'
+      +'<div class="fc-bar-track"><div class="fc-bar-fill fortune-fill-'+lvl+'" style="width:'+it.val+'%"></div></div>'
+      +'<div class="fc-desc">'+it.desc+'</div>'
+      +'</div>';
+  }
+  return html+'</div></div>';
 }
 
 function buildBadges(found,voids){
@@ -958,6 +1093,7 @@ function showDetail(dayOffset){
       +buildWuxingBar(h.saju)
       +buildBadges(h.score.baby.guirenFound,h.score.baby.kongmangVoids)
       +buildScoreBreakdown(h.score)
+      +buildFortuneGrid(h.saju,h.score)
       +'<button class="interp-toggle-btn" data-target="'+interpId+'">📖 상세 사주 풀이 보기 ▼</button>'
       +'<div class="interp-container" id="'+interpId+'" style="display:none;">'
       +buildInterpretation(h.saju,h.score)
