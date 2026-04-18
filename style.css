@@ -371,22 +371,84 @@ input, select { outline: none; }
 .day-detail-panel { display: none; padding: 0 1rem .9rem; }
 .day-detail-panel.open { display: block; }
 
-/* ── 11. 오행 분포 바 ────────────────────────────── */
-.wuxing-bar {
-  display: flex;
-  gap: .4rem;
-  margin-bottom: .75rem;
+/* ── 11. 오행 분포 시각화 ────────────────────────── */
+.wx-section { margin-bottom: .8rem; }
+
+.wx-bars { display: flex; flex-direction: column; gap: .32rem; margin-bottom: .75rem; }
+.wx-bar-item {
+  display: grid;
+  grid-template-columns: 2.6rem 1fr 2.4rem;
   align-items: center;
-  flex-wrap: wrap;
+  gap: .45rem;
 }
-.wuxing-item { display: flex; align-items: center; gap: .22rem; font-size: .74rem; }
-.wuxing-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-.wx-wood  { background: var(--wood); }
-.wx-fire  { background: var(--fire); }
-.wx-earth { background: var(--earth); }
-.wx-metal { background: var(--metal); }
-.wx-water { background: var(--water); }
-.wuxing-count { color: var(--text2); }
+.wx-bar-label { font-size: .82rem; font-weight: 700; text-align: right; }
+.wx-bar-label span { font-size: .66rem; font-weight: 400; margin-left: .12rem; }
+.wx-bar-track { background: #f0f0f0; border-radius: 10px; height: 16px; overflow: hidden; }
+.wx-bar-fill { height: 100%; border-radius: 10px; transition: width .4s ease; min-width: 3px; }
+.wx-empty .wx-bar-label { opacity: .45; }
+.wx-bar-count { font-size: .78rem; font-weight: 700; text-align: center; }
+.wx-bar-count span { font-size: .62rem; color: #bbb; }
+
+.wx-advice {
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  padding: .7rem .8rem;
+  margin-bottom: .55rem;
+}
+.wx-advice-title { font-size: .8rem; font-weight: 700; color: var(--text); margin-bottom: .55rem; }
+.wx-advice-item {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e8e8e8;
+  margin-bottom: .5rem;
+}
+.wx-advice-item:last-child { margin-bottom: 0; }
+.wx-advice-header { padding: .42rem .7rem; }
+.wx-advice-body { padding: .55rem .7rem; background: #fff; }
+.wx-meaning { font-size: .79rem; color: var(--text2); margin: 0 0 .45rem; line-height: 1.6; }
+.wx-remedy-title { font-size: .77rem; font-weight: 700; color: var(--text); margin-bottom: .3rem; }
+.wx-remedy ul { margin: 0; padding-left: 1.2rem; }
+.wx-remedy li { font-size: .77rem; color: var(--text2); margin-bottom: .2rem; line-height: 1.5; }
+
+.wx-strong-note {
+  background: #f0f7ff;
+  border-radius: 8px;
+  padding: .5rem .7rem;
+  border: 1px solid #c8def5;
+  font-size: .79rem;
+  line-height: 1.55;
+}
+.wx-strong-title { font-weight: 700; color: var(--text); }
+.wx-strong-desc { color: var(--text2); }
+
+/* ── 14a. 사주 4주 컬러 테이블 ─────────────────────── */
+.pillar-table2 { margin-bottom: .85rem; }
+.pt2-labels {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .35rem;
+  margin-bottom: .22rem;
+}
+.pt2-labels > div { text-align: center; font-size: .62rem; color: var(--text3); font-weight: 700; letter-spacing: .05em; }
+.pt2-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: .35rem;
+  margin-bottom: .35rem;
+}
+.pt2-cell {
+  border-radius: 10px;
+  padding: .55rem .2rem .45rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .1rem;
+}
+.pt2-h { font-size: 1.55rem; font-weight: 700; line-height: 1; font-family: 'Noto Serif KR', serif; }
+.pt2-k { font-size: .72rem; opacity: .88; margin-top: .05rem; }
+.pt2-tag { font-size: .6rem; font-weight: 600; padding: .12rem .32rem; border-radius: 4px; margin-top: .12rem; }
 
 /* ── 12. 점수 브레이크다운 ───────────────────────── */
 .score-breakdown {
@@ -412,22 +474,11 @@ input, select { outline: none; }
 .badge-fuxing  { background: #e8f5e9; border: 1px solid #a5d6a7; color: #2e7d32; }
 .badge-kongmang{ background: #ffebee; border: 1px solid #ef9a9a; color: #c62828; }
 
-/* ── 14. 사주 4주 표시 ───────────────────────────── */
-.pillar-table {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: .45rem;
-  margin-bottom: .75rem;
-}
-.pillar-cell {
-  background: var(--bg2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: .5rem .3rem;
-  text-align: center;
-}
-.pillar-label { font-size: .62rem; color: var(--text3); margin-bottom: .25rem; letter-spacing: .04em; font-weight: 600; text-transform: uppercase; }
-.pillar-hanja { font-size: 1.05rem; letter-spacing: .04em; font-weight: 700; }
+/* ── 14. 사주 4주 표시 (구형, 미사용) ──────────────── */
+.pillar-table { display: grid; grid-template-columns: repeat(4,1fr); gap: .45rem; margin-bottom: .75rem; }
+.pillar-cell { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: .5rem .3rem; text-align: center; }
+.pillar-label { font-size: .62rem; color: var(--text3); margin-bottom: .25rem; }
+.pillar-hanja { font-size: 1.05rem; font-weight: 700; }
 .pillar-kr { font-size: .68rem; color: var(--text2); }
 .pillar-element { font-size: .63rem; margin-top: .18rem; font-weight: 600; }
 
@@ -589,18 +640,19 @@ input, select { outline: none; }
   .score-row-label { min-width: 62px; font-size: .71rem; }
   .score-row-val { font-size: .71rem; min-width: 28px; }
 
-  /* 사주 4주 테이블 */
-  .pillar-table { gap: .28rem; margin-bottom: .65rem; }
-  .pillar-cell { padding: .38rem .18rem; border-radius: 6px; }
-  .pillar-label { font-size: .58rem; margin-bottom: .18rem; }
-  .pillar-hanja { font-size: .92rem; }
-  .pillar-kr { font-size: .6rem; }
-  .pillar-element { font-size: .56rem; }
+  /* 사주 4주 테이블 (신형) */
+  .pt2-row { gap: .22rem; margin-bottom: .22rem; }
+  .pt2-cell { padding: .42rem .12rem .35rem; border-radius: 8px; }
+  .pt2-h { font-size: 1.25rem; }
+  .pt2-k { font-size: .64rem; }
+  .pt2-tag { font-size: .55rem; padding: .09rem .24rem; }
+  .pt2-labels { gap: .22rem; }
 
-  /* 오행 분포 바 */
-  .wuxing-bar { gap: .28rem; margin-bottom: .6rem; }
-  .wuxing-item { font-size: .68rem; gap: .16rem; }
-  .wuxing-dot { width: 8px; height: 8px; }
+  /* 오행 분포 바 (신형) */
+  .wx-bar-label { font-size: .76rem; }
+  .wx-bar-track { height: 14px; }
+  .wx-bar-count { font-size: .72rem; }
+  .wx-remedy li { font-size: .73rem; }
 
   /* 귀인 뱃지 */
   .guiren-badges { gap: .2rem; margin-bottom: .5rem; }
@@ -674,6 +726,9 @@ input, select { outline: none; }
   .pillar-cell { padding: .3rem .12rem; }
   .pillar-hanja { font-size: .84rem; }
   .pillar-kr { font-size: .56rem; }
+  .pt2-h { font-size: 1.1rem; }
+  .pt2-k { font-size: .58rem; }
+  .pt2-tag { font-size: .5rem; }
 
   .hour-row-header {
     grid-template-columns: 3.6rem 1fr auto;

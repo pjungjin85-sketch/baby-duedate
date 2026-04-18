@@ -144,6 +144,24 @@ const WUXING_MISSING = [
   },
 ];
 
+// 오행 배경색: 양(진한색+흰글씨) / 음(연한색+진한글씨)
+const WX_BG_YANG  = ['#388E3C','#C62828','#E65100','#455A64','#1565C0'];
+const WX_BG_YIN   = ['#E8F5E9','#FFEBEE','#FFF8E1','#ECEFF1','#E3F2FD'];
+const WX_TEXT_YIN = ['#2E7D32','#B71C1C','#BF360C','#37474F','#0D47A1'];
+
+const WUXING_REMEDY = [
+  { tip:'🌿 나무 기운 보완법',
+    items:['초록·파란색 옷이나 소품을 활용해요','집에 화분·식물을 두면 좋아요','신맛 음식(레몬·식초·키위)이 도움돼요','봄에 야외 활동을 자주 해요','동쪽 방향이 길한 방향이에요'] },
+  { tip:'🔥 불 기운 보완법',
+    items:['빨간·주황색을 포인트로 활용해요','햇빛이 잘 드는 밝은 환경이 좋아요','쓴맛 음식(녹차·다크초콜릿)이 도움돼요','활동적인 운동이나 취미를 가져요','남쪽 방향이 길한 방향이에요'] },
+  { tip:'🌍 흙 기운 보완법',
+    items:['노란·갈색·베이지 컬러를 활용해요','규칙적인 생활 루틴을 만들어요','단맛 음식(고구마·단호박·꿀)이 도움돼요','자연·흙·산 가까운 환경이 좋아요','중앙·남서 방향이 길한 방향이에요'] },
+  { tip:'⚙ 쇠 기운 보완법',
+    items:['흰색·회색·금색·은색을 활용해요','정리정돈과 규칙적인 환경을 유지해요','매운맛 음식(무·도라지·마늘)이 도움돼요','명확한 목표와 계획 세우는 습관을 길러요','서쪽·서북 방향이 길한 방향이에요'] },
+  { tip:'💧 물 기운 보완법',
+    items:['검정·짙은 파란색을 활용해요','강·바다·수영장에서 시간을 보내요','짠맛 음식(된장·김·멸치)이 도움돼요','조용한 명상이나 독서 시간을 만들어요','북쪽 방향이 길한 방향이에요'] },
+];
+
 const MONTH_SEASON = [
   { branches:[2,3,4], season:'봄(春)', months:'2~4월경', icon:'🌸',
     meaning:'봄은 꽃이 피고 새싹이 돋아나는 계절이에요. 이 계절에 태어난 아이는 새로운 것을 좋아하고 도전 정신이 강해요.',
@@ -463,28 +481,94 @@ function buildPercentileBadge(score){
 function buildPillarTable(saju){
   const labels=['연주','월주','일주','시주'];
   const pillars=[saju.year,saju.month,saju.day,saju.hour];
-  let html='<div class="pillar-table">';
-  for(let i=0;i<4;i++){
-    const p=pillars[i],wx=TG_WX[p.stem];
-    html+='<div class="pillar-cell">'
-      +'<div class="pillar-label">'+labels[i]+'</div>'
-      +'<div class="pillar-hanja" style="color:'+WX_COLOR[wx]+'">'+TG[p.stem]+DZ[p.branch]+'</div>'
-      +'<div class="pillar-kr">'+TG_KR[p.stem]+DZ_KR[p.branch]+'</div>'
-      +'<div class="pillar-element" style="color:'+WX_COLOR[wx]+'">'+WX[wx]+'</div>'
+  // 양간(0,2,4,6,8)=짙은 배경+흰글씨 / 음간(1,3,5,7,9)=연한 배경+진한글씨
+  function cellHtml(hanja,kr,wx,isYang){
+    const bg=isYang?WX_BG_YANG[wx]:WX_BG_YIN[wx];
+    const col=isYang?'#fff':WX_TEXT_YIN[wx];
+    const tagBg=isYang?'rgba(255,255,255,.22)':'rgba(0,0,0,.07)';
+    return '<div class="pt2-cell" style="background:'+bg+';color:'+col+'">'
+      +'<div class="pt2-h">'+hanja+'</div>'
+      +'<div class="pt2-k">'+kr+'</div>'
+      +'<div class="pt2-tag" style="background:'+tagBg+';color:'+col+'">'+WX_HANJA[wx]+'·'+WX[wx]+'</div>'
       +'</div>';
   }
+  let html='<div class="pillar-table2">';
+  // 라벨 행
+  html+='<div class="pt2-labels">';
+  for(let i=0;i<4;i++) html+='<div>'+labels[i]+'</div>';
+  html+='</div>';
+  // 천간 행
+  html+='<div class="pt2-row">';
+  for(let i=0;i<4;i++){
+    const p=pillars[i];
+    html+=cellHtml(TG[p.stem],TG_KR[p.stem],TG_WX[p.stem],p.stem%2===0);
+  }
+  html+='</div>';
+  // 지지 행
+  html+='<div class="pt2-row">';
+  for(let i=0;i<4;i++){
+    const p=pillars[i];
+    html+=cellHtml(DZ[p.branch],DZ_KR[p.branch],DZ_WX[p.branch],p.branch%2===0);
+  }
+  html+='</div>';
   return html+'</div>';
 }
 
 function buildWuxingBar(saju){
-  const dist=getElementDist(saju);
-  let html='<div class="wuxing-bar">';
+  const dist=getElementDist(saju); // 각 오행 개수 (최대 8)
+  const WX_NAMES=['나무 기운','불 기운','흙 기운','쇠 기운','물 기운'];
+  const WX_ICON=['🌿','🔥','🌍','⚙','💧'];
+
+  // ① 오행 강도 바
+  let html='<div class="wx-section">';
+  html+='<div class="wx-bars">';
   for(let i=0;i<5;i++){
-    html+='<div class="wuxing-item">'
-      +'<div class="wuxing-dot '+WX_CLS[i]+'"></div>'
-      +'<span style="color:'+WX_COLOR[i]+'">'+WX_HANJA[i]+'</span>'
-      +'<span class="wuxing-count">'+dist[i]+'</span>'
+    const pct=Math.round(dist[i]/8*100);
+    const isEmpty=dist[i]===0;
+    html+='<div class="wx-bar-item'+(isEmpty?' wx-empty':'')+'">'
+      +'<div class="wx-bar-label" style="color:'+(isEmpty?'#bbb':WX_COLOR[i])+'">'+WX_HANJA[i]+'<span>'+WX[i]+'</span></div>'
+      +'<div class="wx-bar-track">'
+        +'<div class="wx-bar-fill" style="width:'+Math.max(pct,isEmpty?0:5)+'%;background:'+(isEmpty?'#e0e0e0':WX_BG_YANG[i])+'"></div>'
+      +'</div>'
+      +'<div class="wx-bar-count" style="color:'+(isEmpty?'#bbb':WX_COLOR[i])+'">'+dist[i]+'<span>/8</span></div>'
       +'</div>';
+  }
+  html+='</div>';
+
+  // ② 부족한 기운 & 보완법
+  const missing=[];
+  const strong=[];
+  for(let i=0;i<5;i++){
+    if(dist[i]===0) missing.push(i);
+    else if(dist[i]>=3) strong.push(i);
+  }
+  if(missing.length>0){
+    html+='<div class="wx-advice">';
+    html+='<div class="wx-advice-title">⚠ 부족한 기운 &amp; 보완 방법</div>';
+    for(const idx of missing){
+      const m=WUXING_MISSING[idx];
+      const r=WUXING_REMEDY[idx];
+      html+='<div class="wx-advice-item" style="border-left:4px solid '+WX_BG_YANG[idx]+'">'
+        +'<div class="wx-advice-header" style="background:'+WX_BG_YIN[idx]+'">'
+          +'<span style="color:'+WX_TEXT_YIN[idx]+';font-weight:700;font-size:.82rem">'+WX_ICON[idx]+' '+WX_HANJA[idx]+'('+WX[idx]+') '+WX_NAMES[idx]+'이 없어요</span>'
+        +'</div>'
+        +'<div class="wx-advice-body">'
+          +'<p class="wx-meaning">'+m.meaning+'</p>'
+          +'<div class="wx-remedy">'
+            +'<div class="wx-remedy-title">'+r.tip+'</div>'
+            +'<ul>'+r.items.map(t=>'<li>'+t+'</li>').join('')+'</ul>'
+          +'</div>'
+        +'</div>'
+        +'</div>';
+    }
+    html+='</div>';
+  }
+  if(strong.length>0){
+    html+='<div class="wx-strong-note">';
+    html+='<span class="wx-strong-title">💪 강한 기운: </span>';
+    html+=strong.map(i=>'<span style="color:'+WX_COLOR[i]+';font-weight:700">'+WX_ICON[i]+WX_HANJA[i]+'('+WX[i]+')</span>').join('  ')
+      +'<span class="wx-strong-desc"> 이 기운이 강해요. 이 기운의 특성이 아이 성격과 재능에 두드러지게 나타날 수 있어요.</span>';
+    html+='</div>';
   }
   return html+'</div>';
 }
